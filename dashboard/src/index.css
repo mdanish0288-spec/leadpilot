@@ -1,0 +1,24 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --color-canvas: #fafafa;
+  --color-ink: #18181b;
+  --color-muted: #63636b;
+  --color-line: #e9e9ec;
+  --color-accent: #5b5bd6;
+  --color-accent-soft: #eeeefd;
+  --color-accent-ink: #4040b0;
+  --color-danger: #d4342c;
+  --color-danger-soft: #fdecec;
+  --color-ok: #1f7a4a;
+  --color-ok-soft: #e7f6ee;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #fff5dc;
+}
+
+html { background: var(--color-canvas); color: var(--color-ink); -webkit-font-smoothing: antialiased; }
+body { font-family: var(--font-sans); font-feature-settings: 'cv11', 'ss01'; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+input[type='number']::-webkit-inner-spin-button { opacity: 0.4; }

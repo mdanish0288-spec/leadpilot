@@ -39,7 +39,15 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - `docs/design-playbook.md` — rules every client website MUST follow
 - `docs/design-resources.md` — vetted open-source libraries (stars, licence, purpose)
 - `templates/` — Astro layout library (6+ premium layouts)
-- `scripts/` — tooling (Playwright screenshots, checks)
+- `scripts/` — tooling (`screenshot.mjs` for client sites, `dashboard-shots.mjs` for the dashboard)
+- `dashboard/` — owner dashboard (Vite + React + Tailwind). `npm test`, `npm run build`. Local preview with sample data: `npm run dev` then open `/?preview` (dev only, stripped from the live build)
+- `supabase/migrations/` — every database change, in order. Supabase project ref `hqmhqrbmpxrksvnqmtlg` (Mumbai, free)
+
+## Security model (Phase 1)
+- Database lets exactly ONE account exist (trigger on auth.users). RLS on every table calls `private.is_owner()`, which needs the owner's account AND `aal = aal2` (2FA passed).
+- Price floors are enforced in the database (`lowest_price <= start_price`, > 0); daily email limit capped at 25 in the database.
+- Every settings/price change is written to `audit_log`.
+- The Supabase publishable key in `dashboard/src/lib/config.ts` is public by design. Secret/service keys never go in the repo.
 
 ## HARD SAFETY RULES — NEVER BREAK THESE
 - Never send payment details in the first message or before the client clearly says yes.
@@ -75,8 +83,8 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 6. When a step needs the owner (account, approval, payment, verification), stop and give exact click-by-click steps, then wait.
 
 ## BUILD ORDER
-- Phase 0: connectors check, private GitHub repo, CLAUDE.md, design research, design-playbook.md, layout library (6 layouts). ← current
-- Phase 1: domain, Supabase, Cloudflare, business email, secure login with 2FA, dashboard design, settings page.
+- Phase 0: connectors check, GitHub repo, CLAUDE.md, design research, design-playbook.md, layout library (6 layouts). ✅
+- Phase 1: domain, Supabase, Cloudflare, business email, secure login with 2FA, dashboard design, settings page. ← current
 - Phase 2: command box + voice + lead finder + business score + Google Sheet sync.
 - Phase 3: deep analysis + website builder + demo hosting on Netlify. 3 sample demos: Canadian restaurant, Indian cafe, painter.
 - Phase 4: first message sending (email auto, WhatsApp and Instagram one-tap).
