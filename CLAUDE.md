@@ -61,7 +61,7 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 
 ## Security rules
 - NEVER put API keys, passwords or secrets in code or GitHub. Only in Cloudflare Worker secrets, Supabase secrets, or a local `.env` file listed in `.gitignore`.
-- The GitHub repo `leadpilot` is PRIVATE. Never make it public.
+- The GitHub repo `leadpilot` is PUBLIC (owner's decision, 16 Nov 2026). Anyone can read it, so NEVER commit: secrets, `.env` files, client data, lead data, real names/phones/emails, message logs, payment details (UPI ID, PayPal, wallet), or screenshots of real businesses. Those live only in Supabase / Cloudflare secrets.
 - Dashboard: login with 2FA, only the owner's account, no sign-up page, RLS on every table.
 - Webhooks verified with signatures (WhatsApp, Instagram). Rate limiting on all endpoints. Daily database backup.
 - The deployed system must run 24/7 without Claude Code: use permanent credentials (API keys, OAuth clients, service accounts, webhook secrets) created for the system, never this session's connectors.
@@ -69,7 +69,7 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 ## How to work
 1. Work phase by phase (BUILD ORDER). For each phase: plan and explain simply → build → test yourself → fix all errors → give the owner a simple non-coder test checklist.
 2. Do NOT start the next phase until the owner types "next".
-3. After each phase, commit and push to the private GitHub repo `leadpilot`.
+3. After each phase, commit and push to the public GitHub repo `leadpilot` (check `git diff --cached` for secrets and personal data first).
 4. Automated tests for every critical function (pricing tiers, negotiation limits, launch-offer counter, payment messages, STOP handling, message checks). All tests must pass before a phase is done.
 5. Use Playwright to open every website and dashboard page, take phone + desktop screenshots, and review them against `docs/design-playbook.md` before showing the owner.
 6. When a step needs the owner (account, approval, payment, verification), stop and give exact click-by-click steps, then wait.
