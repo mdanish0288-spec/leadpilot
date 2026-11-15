@@ -71,3 +71,74 @@ export async function signedFileUrl(path: string | null): Promise<string | null>
   const { data } = await supabase.storage.from('owner-files').createSignedUrl(path, 600);
   return data?.signedUrl ?? null;
 }
+
+// ---------------- Leads (Phase 2) ----------------
+export interface Lead {
+  id: string; created_at: string; name: string; business_type: string; full_address: string | null; neighbourhood: string | null;
+  city: string | null; country: string | null; country_code: string | null; phone: string | null; phone_intl: string | null;
+  email: string | null; instagram: string | null; rating: number | null; review_count: number | null; price_level: string | null;
+  opening_hours: { weekdayDescriptions?: string[] } | null; maps_url: string | null; website: string | null;
+  website_status: 'none' | 'social_only' | 'pending' | 'broken' | 'weak' | 'good'; website_issues: string[];
+  lead_type: 'hot' | 'warm' | 'skip' | 'pending'; score: number | null;
+  score_reasons: { label: string; points: number; max: number; detail: string }[];
+  pricing_tier: 'standard' | 'premium' | 'luxury' | null; stage: string; photo_count: number;
+  top_reviews: { rating: number | null; text: string; author: string | null; when: string | null }[];
+  sheet_row: number | null; notes: string | null;
+}
+
+const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes';
+
+export async function loadLeads(): Promise<Lead[]> {
+  if (PREVIEW) return PREVIEW_LEADS;
+  const { data, error } = await supabase.from('leads').select(LEAD_COLUMNS).order('created_at', { ascending: false }).limit(500);
+  if (error) throw new Error(`Could not load leads: ${error.message}`);
+  return (data ?? []) as unknown as Lead[];
+}
+
+export async function loadLead(id: string): Promise<Lead | null> {
+  if (PREVIEW) return PREVIEW_LEADS.find((l) => l.id === id) ?? null;
+  const { data, error } = await supabase.from('leads').select(LEAD_COLUMNS).eq('id', id).maybeSingle();
+  if (error) throw new Error(`Could not load this lead: ${error.message}`);
+  return data as unknown as Lead | null;
+}
+
+export async function homeStats(): Promise<{ leads: number; hot: number; warm: number; pending: number }> {
+  if (PREVIEW) return { leads: 17, hot: 9, warm: 5, pending: 0 };
+  const count = async (filter?: [string, string]) => {
+    let q = supabase.from('leads').select('id', { count: 'exact', head: true });
+    if (filter) q = q.eq(filter[0], filter[1]);
+    const { count: n } = await q;
+    return n ?? 0;
+  };
+  const [leads, hot, warm, pending] = await Promise.all([count(), count(['lead_type', 'hot']), count(['lead_type', 'warm']), count(['website_status', 'pending'])]);
+  return { leads, hot, warm, pending };
+}
+
+export async function saveSheetLink(sheetId: string): Promise<void> {
+  if (PREVIEW) { previewSettings = { ...previewSettings }; return; }
+  const { error } = await supabase.from('settings').update({ google_sheet_id: sheetId }).eq('id', 1);
+  if (error) throw new Error(`Could not save the sheet link: ${error.message}`);
+}
+
+export async function loadSheetLink(): Promise<string> {
+  if (PREVIEW) return '';
+  const { data } = await supabase.from('settings').select('google_sheet_id').eq('id', 1).single();
+  return (data as { google_sheet_id: string } | null)?.google_sheet_id ?? '';
+}
+
+/** Accepts a full Google Sheets link or a bare ID. Returns the ID, or null if it doesn't look right. */
+export function sheetIdFromInput(input: string): string | null {
+  const m = /\/spreadsheets\/d\/([A-Za-z0-9_-]{20,100})/.exec(input) ?? /^([A-Za-z0-9_-]{20,100})$/.exec(input.trim());
+  return m ? m[1] : null;
+}
+
+const sampleReasons = (s: number) => [
+  { label: 'Google rating', points: 21, max: 25, detail: '4.6 stars' }, { label: 'Number of reviews', points: 20, max: 25, detail: '312 reviews' },
+  { label: 'Google price level', points: 10, max: 20, detail: 'Moderate ($$)' }, { label: 'Photos on Google', points: 10, max: 10, detail: '10 photos (quality checked in deep analysis)' },
+  { label: 'Premium area', points: 0, max: 10, detail: 'Not analysed yet (deep analysis)' }, { label: 'Multiple branches', points: s > 60 ? 10 : 0, max: 10, detail: s > 60 ? '2 locations found' : 'Single location' },
+];
+const PREVIEW_LEADS: Lead[] = [
+  { id: 'p1', created_at: '2026-11-16T09:00:00Z', name: 'Sample: Komorebi Coffee', business_type: 'cafes', full_address: '1-2-3 Jingumae, Shibuya City, Tokyo', neighbourhood: 'Jingumae', city: 'Tokyo', country: 'Japan', country_code: 'JP', phone: '03-0000-0000', phone_intl: null, email: null, instagram: 'https://www.instagram.com/sample', rating: 4.6, review_count: 312, price_level: 'MODERATE', opening_hours: { weekdayDescriptions: ['Monday: 8:00 AM – 6:00 PM', 'Tuesday: 8:00 AM – 6:00 PM'] }, maps_url: 'https://maps.google.com', website: 'https://www.instagram.com/sample', website_status: 'social_only', website_issues: [], lead_type: 'hot', score: 71, score_reasons: sampleReasons(71), pricing_tier: 'luxury', stage: 'New', photo_count: 10, top_reviews: [{ rating: 5, text: 'Beautiful pour-over and the matcha latte is perfect.', author: 'Sample reviewer', when: '2 weeks ago' }], sheet_row: 2, notes: null },
+  { id: 'p2', created_at: '2026-11-16T09:00:00Z', name: 'Sample: Sakura Bakery Cafe', business_type: 'cafes', full_address: '4-5 Nakameguro, Meguro City, Tokyo', neighbourhood: 'Nakameguro', city: 'Tokyo', country: 'Japan', country_code: 'JP', phone: '03-1111-1111', phone_intl: null, email: 'hello@example.jp', instagram: null, rating: 4.3, review_count: 95, price_level: null, opening_hours: null, maps_url: 'https://maps.google.com', website: 'http://sakura-sample.jp', website_status: 'weak', website_issues: ['No HTTPS (shows "Not secure" in browsers)', 'Not built for phones (no mobile viewport)', 'Copyright year 2017 — looks unmaintained'], lead_type: 'warm', score: 52, score_reasons: sampleReasons(52), pricing_tier: 'premium', stage: 'New', photo_count: 6, top_reviews: [], sheet_row: 3, notes: null },
+  { id: 'p3', created_at: '2026-11-16T09:00:00Z', name: 'Sample: Modern Roasters', business_type: 'cafes', full_address: 'Shinjuku City, Tokyo', neighbourhood: null, city: 'Tokyo', country: 'Japan', country_code: 'JP', phone: null, phone_intl: null, email: null, instagram: null, rating: 4.1, review_count: 40, price_level: 'MODERATE', opening_hours: null, maps_url: null, website: 'https://modern-sample.jp', website_status: 'good', website_issues: [], lead_type: 'skip', score: 38, score_reasons: sampleReasons(38), pricing_tier: 'standard', stage: 'New', photo_count: 3, top_reviews: [], sheet_row: 4, notes: null },
+];

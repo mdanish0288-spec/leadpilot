@@ -43,6 +43,14 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - `dashboard/` — owner dashboard (Vite + React + Tailwind). `npm test`, `npm run build`. Local preview with sample data: `npm run dev` then open `/?preview` (dev only, stripped from the live build)
 - `supabase/migrations/` — every database change, in order. Supabase project ref `hqmhqrbmpxrksvnqmtlg` (Mumbai, free)
 
+## Server (Phase 2)
+- `dashboard/functions/api/*.ts` = Cloudflare Pages Functions (deploy automatically with the dashboard). Shared logic in `dashboard/server/` with tests (`npm test`).
+- Endpoints: `status`, `command` (Claude `claude-opus-5-5`, structured output, server-side fallbacks on), `transcribe` (ElevenLabs `scribe_v2`), `search` (Google Places Text Search New, 20 per page, max 60), `check-websites` (4 per call), `sync-sheet`.
+- Every endpoint first calls `public.use_quota` = owner + 2FA check + hourly rate limit. Server talks to Supabase with the OWNER's JWT so RLS always applies (no service-role key needed yet).
+- Cloudflare free plan: 10 ms CPU and 50 outbound requests per call — keep batches small. Never store `fetch` as an object property (Workers "Illegal invocation"); wrap it in an arrow.
+- Secrets (Cloudflare Pages → Settings → Variables and Secrets, type Secret): `ANTHROPIC_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`.
+- Website checks run while the dashboard is open (resumed on next open). A Worker cron for fully unattended jobs comes with Phase 4/5.
+
 ## Security model (Phase 1)
 - Database lets exactly ONE account exist (trigger on auth.users). RLS on every table calls `private.is_owner()`, which needs the owner's account AND `aal = aal2` (2FA passed).
 - Price floors are enforced in the database (`lowest_price <= start_price`, > 0); daily email limit capped at 25 in the database.
@@ -84,8 +92,8 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 
 ## BUILD ORDER
 - Phase 0: connectors check, GitHub repo, CLAUDE.md, design research, design-playbook.md, layout library (6 layouts). ✅
-- Phase 1: domain, Supabase, Cloudflare, business email, secure login with 2FA, dashboard design, settings page. ← current
-- Phase 2: command box + voice + lead finder + business score + Google Sheet sync.
+- Phase 1: domain, Supabase, Cloudflare, business email, secure login with 2FA, dashboard design, settings page. ✅ (domain + business email still pending owner's choice)
+- Phase 2: command box + voice + lead finder + business score + Google Sheet sync. ← current
 - Phase 3: deep analysis + website builder + demo hosting on Netlify. 3 sample demos: Canadian restaurant, Indian cafe, painter.
 - Phase 4: first message sending (email auto, WhatsApp and Instagram one-tap).
 - Phase 5: WhatsApp + Instagram webhooks, Gmail hourly check, requirements, demo customisation.
