@@ -1,0 +1,87 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  /** Google Fonts css2 query, e.g. "family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Figtree:wght@400;600" */
+  fonts: string;
+  lang?: string;
+  themeColor: string;
+  /** Demo banner. Removed only after the owner marks "Fully Paid". */
+  demo?: { business: string; agency: string; note?: string } | null;
+  noindex?: boolean;
+  bodyClass: string;
+}
+const { title, description, fonts, lang = 'en', themeColor, demo = null, noindex = true, bodyClass } = Astro.props;
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content={themeColor} />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?${fonts}&display=swap`} />
+    <script is:inline>
+      // Hide reveal targets only when JS runs; if the motion script fails, show everything after 2.5s.
+      document.documentElement.classList.add('js');
+      setTimeout(function () { if (!window.__motion) document.documentElement.classList.remove('js'); }, 2500);
+    </script>
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <a class="skip" href="#main">Skip to content</a>
+    {demo && (
+      <div class="demo-banner" role="note">
+        Free demo designed for {demo.business} by {demo.agency}
+        {demo.note && <span class="demo-note">{demo.note}</span>}
+      </div>
+    )}
+    <slot />
+    <script>
+      import '../scripts/motion.ts';
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html.lenis, html.lenis body { height: auto; }
+  .lenis.lenis-smooth { scroll-behavior: auto !important; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.55; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  img { display: block; max-width: 100%; height: auto; }
+  a { color: inherit; }
+  h1, h2, h3, p, ul, ol, figure, blockquote { margin: 0; }
+  h1, h2, h3 { line-height: 1.1; text-wrap: balance; }
+  ul, ol { padding: 0; list-style: none; }
+  button { font: inherit; }
+  :focus-visible { outline: 3px solid var(--focus, currentColor); outline-offset: 3px; border-radius: 4px; }
+
+  .skip { position: absolute; left: 12px; top: -60px; z-index: 100; background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 8px; text-decoration: none; }
+  .skip:focus { top: 12px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .demo-banner { font: 500 0.8125rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif; text-align: center; padding: 8px 16px; background: #1c1c1e; color: #f5f5f7; }
+  .demo-note { display: block; opacity: 0.7; font-size: 0.75rem; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .js [data-reveal], .js [data-hero] { opacity: 0; }
+  }
+
+  /* Sticky mobile action bar (Fitts's law: thumb reach). */
+  .action-bar { position: fixed; inset: auto 0 0 0; z-index: 50; display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--bar-bg, var(--bg)); border-top: 1px solid var(--line); }
+  .action-bar a { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-radius: var(--bar-radius, 12px); font-weight: 600; font-size: 0.975rem; text-decoration: none; }
+  .action-bar .primary { background: var(--accent); color: var(--on-accent); }
+  .action-bar .secondary { border: 1.5px solid var(--line-strong, var(--line)); color: var(--fg); }
+  body { padding-bottom: 76px; }
+  @media (min-width: 900px) {
+    .action-bar { display: none; }
+    body { padding-bottom: 0; }
+  }
+</style>

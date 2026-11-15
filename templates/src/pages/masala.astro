@@ -1,0 +1,230 @@
+---
+// Layout 2 — "Masala": Indian restaurant with per-dish delivery-app order buttons. Sample business, New Delhi (Indian style).
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import ActionBar from '../components/ActionBar.astro';
+import { srcset, unsplash } from '../lib/img';
+import { telLink, waLink, mapEmbed, mapLink } from '../lib/types';
+
+const biz = {
+  name: 'Saffron Courtyard',
+  area: 'Hauz Khas Village',
+  city: 'New Delhi',
+  address: '12 Hauz Khas Village, New Delhi, Delhi 110016',
+  phoneDisplay: '+91 98765 43210',
+  phoneIntl: '+919876543210',
+  rating: 4.6,
+  reviews: 1284,
+  tz: 'Asia/Kolkata',
+  hours: { mon: ['12:00', '23:00'], tue: ['12:00', '23:00'], wed: ['12:00', '23:00'], thu: ['12:00', '23:00'], fri: ['12:00', '23:30'], sat: ['12:00', '23:30'], sun: ['12:00', '23:00'] } as const,
+};
+// SAMPLE ONLY. Real demos: an app link is added only after it is verified to open this exact
+// business at this exact address. No verified link → the dish falls back to WhatsApp / Call.
+const apps: { label: string; url: string }[] = [
+  { label: 'Zomato', url: 'https://www.zomato.com/' },
+  { label: 'Swiggy', url: 'https://www.swiggy.com/' },
+];
+const dishes = [
+  { name: 'Butter chicken with garlic naan', note: 'The dish most reviewers order first — smoky, rich and not too sweet.', price: '485', img: '1565557623262-b51c2513a641', loved: 212 },
+  { name: 'Dum biryani', note: 'Slow-cooked and sealed, served with burani raita.', price: '420', img: '1631515243349-e0cb75fb8d3a', loved: 164 },
+  { name: 'Punjabi samosa chaat', note: 'Crisp samosas, chole, tamarind and mint chutney.', price: '220', img: '1601050690597-df0568f70950', loved: 0 },
+];
+const reviews = [
+  { text: 'Butter chicken here is the real deal. The courtyard seating at night with the lake view is beautiful.', name: 'Ananya R.' },
+  { text: 'Biryani was perfectly cooked, every grain separate. Service was quick even on a packed Saturday.', name: 'Rohit K.' },
+  { text: 'Brought my parents for their anniversary. Staff were warm, food was rich but not heavy. Will be back.', name: 'Simran B.' },
+];
+const wa = waLink(biz.phoneIntl, `Hi ${biz.name}, I'd like to place an order.`);
+---
+<Base
+  title={`${biz.name} — North Indian kitchen in ${biz.area}, ${biz.city}`}
+  description={`Butter chicken, dum biryani and samosa chaat in ${biz.area}. Rated ${biz.rating} from ${biz.reviews.toLocaleString('en-IN')} Google reviews. Order on Zomato or Swiggy.`}
+  fonts="family=Gloock&family=Manrope:wght@400;600;700"
+  themeColor="#5c1010"
+  bodyClass="l-masala"
+  demo={{ business: biz.name, agency: '[Your Business Name]', note: 'Layout preview — sample business and sample photos' }}
+>
+  <header class="top">
+    <a class="mark" href="#main">Saffron Courtyard</a>
+    <a class="call" href={telLink(biz.phoneIntl)}><Icon name="phone" size={16} /><span>{biz.phoneDisplay}</span></a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="where" data-hero>{biz.area}, {biz.city}</p>
+        <h1 data-hero>Slow-cooked North Indian food, a courtyard and a lake view</h1>
+        <p class="rating" data-hero><Icon name="star" size={18} /><strong>{biz.rating}</strong> on Google from {biz.reviews.toLocaleString('en-IN')} reviews</p>
+        <div class="hero-cta" data-hero>
+          <a class="btn btn-saffron" href="#order"><Icon name="bag" size={18} />Order now</a>
+          <a class="btn btn-line" href={telLink(biz.phoneIntl)}><Icon name="phone" size={18} />Book a table</a>
+        </div>
+      </div>
+      <figure class="hero-img" data-hero>
+        <img src={unsplash('1585937421612-70a008356fbe', 1200, 1200)} srcset={srcset('1585937421612-70a008356fbe', 1, [480, 800, 1200])} sizes="(min-width: 900px) 46vw, 100vw" width="1200" height="1200" alt="Copper bowls of curry served with rice" fetchpriority="high" />
+      </figure>
+    </section>
+
+    <section id="order" class="menu">
+      <div class="menu-head" data-reveal>
+        <h2>Most loved dishes</h2>
+        <p>Picked from what guests mention most in their reviews. Prices in ₹ from the menu.</p>
+      </div>
+      <ul class="dishes">
+        {dishes.map((d) => (
+          <li class="dish" data-reveal>
+            <img src={unsplash(d.img, 720, 540)} width="720" height="540" alt={d.name} loading="lazy" />
+            <div class="dish-body">
+              <div class="dish-top">
+                <h3>{d.name}</h3>
+                <span class="price">₹{d.price}</span>
+              </div>
+              <p>{d.note}</p>
+              {d.loved > 0 && <p class="loved">Mentioned in {d.loved} reviews</p>}
+              <div class="order">
+                {apps.length
+                  ? apps.map((a) => <a href={a.url} target="_blank" rel="noopener">Order on {a.label}</a>)
+                  : <a href={wa} target="_blank" rel="noopener">Order on WhatsApp</a>}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="band" data-reveal>
+      <blockquote>
+        <p>“{reviews[0].text}”</p>
+        <footer>{reviews[0].name}, Google review</footer>
+      </blockquote>
+    </section>
+
+    <section class="story">
+      <img data-reveal class="story-img" src={unsplash('1517248135467-4c7edcad34c4', 1400, 900)} srcset={srcset('1517248135467-4c7edcad34c4', 0.643, [800, 1400])} sizes="(min-width: 900px) 55vw, 100vw" width="1400" height="900" alt="Warm restaurant dining room set for dinner" loading="lazy" />
+      <div class="story-copy" data-reveal>
+        <h2>Dinner in the village</h2>
+        <p>Tucked into the lanes of Hauz Khas Village, the courtyard fills up from sunset. Families book the long tables, couples ask for the terrace above the deer park, and the tandoor runs until the last order.</p>
+      </div>
+    </section>
+
+    <section class="reviews">
+      <h2 data-reveal>Guests say</h2>
+      <ul>
+        {reviews.slice(1).map((r) => (
+          <li data-reveal><p>“{r.text}”</p><span>{r.name}, Google review</span></li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="visit">
+      <div data-reveal>
+        <h2>Find us</h2>
+        <p class="addr"><Icon name="pin" size={18} />{biz.address}</p>
+        <p class="addr"><Icon name="phone" size={18} /><a href={telLink(biz.phoneIntl)}>{biz.phoneDisplay}</a></p>
+        <Hours hours={biz.hours} tz={biz.tz} style="in" class="hours-wrap" />
+      </div>
+      <div class="map" data-reveal>
+        <iframe title={`Map showing ${biz.name}`} src={mapEmbed(`${biz.name}, ${biz.address}`)} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p class="mark">Saffron Courtyard</p>
+    <p>{biz.address}</p>
+    <p class="credit">Sample photos: Unsplash</p>
+  </footer>
+
+  <ActionBar
+    secondary={[{ label: 'Call', href: telLink(biz.phoneIntl), icon: 'phone' }, { label: 'WhatsApp', href: wa, icon: 'chat' }]}
+    primary={{ label: 'Order', href: '#order', icon: 'bag' }}
+  />
+</Base>
+
+<style is:global>
+  .l-masala {
+    --bg: #ffffff; --fg: #2a1410; --muted: #6b524b; --red: #5c1010; --red-2: #7a1a17; --saffron: #f2a93b; --accent: #5c1010; --on-accent: #fff6e9;
+    --line: #eadfd8; --line-strong: #cdb9ae; --focus: #c77d16; --bar-bg: #ffffff;
+    --font-display: 'Gloock', Georgia, serif; --font-body: 'Manrope', system-ui, sans-serif;
+  }
+  .l-masala h1, .l-masala h2, .l-masala h3, .l-masala .mark { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+  .l-masala .top { position: absolute; inset: auto 0 auto 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; color: #fff6e9; max-width: 1320px; margin: 0 auto; }
+  .l-masala .mark { font-size: 1.35rem; text-decoration: none; }
+  .l-masala .call { display: inline-flex; gap: 8px; align-items: center; text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+  .l-masala .call span { display: none; }
+  @media (min-width: 640px) { .l-masala .call span { display: inline; } }
+
+  .l-masala .hero { background: var(--red); color: #fff6e9; display: grid; gap: 28px; padding: 96px 20px 0; overflow: hidden; }
+  .l-masala .where { color: var(--saffron); font-weight: 700; margin-bottom: 14px; }
+  .l-masala h1 { font-size: clamp(2.4rem, 6.4vw, 5rem); line-height: 1.04; max-width: 15ch; }
+  .l-masala .rating { display: flex; align-items: center; gap: 8px; margin-top: 20px; color: #f3d9c8; }
+  .l-masala .rating svg { color: var(--saffron); }
+  .l-masala .rating strong { color: #fff6e9; }
+  .l-masala .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .l-masala .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 22px; border-radius: 10px; text-decoration: none; font-weight: 700; transition: transform 0.2s ease; }
+  .l-masala .btn:hover { transform: translateY(-2px); }
+  .l-masala .btn-saffron { background: var(--saffron); color: #2a1410; }
+  .l-masala .btn-line { border: 1.5px solid rgba(255, 246, 233, 0.5); }
+  .l-masala .hero-img img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 999px 999px 0 0; }
+  @media (min-width: 900px) {
+    .l-masala .hero { grid-template-columns: 1.05fr 1fr; align-items: end; padding: 140px max(40px, calc((100vw - 1240px) / 2)) 0; gap: 64px; }
+    .l-masala .hero-copy { padding-bottom: 96px; }
+    .l-masala .top { padding: 28px 40px; }
+  }
+
+  .l-masala .menu { padding: 88px 20px; max-width: 1240px; margin: 0 auto; }
+  .l-masala .menu-head h2 { font-size: clamp(2rem, 5vw, 3.5rem); color: var(--red); }
+  .l-masala .menu-head p { color: var(--muted); margin-top: 10px; max-width: 54ch; }
+  .l-masala .dishes { display: grid; gap: 22px; margin-top: 40px; }
+  .l-masala .dish { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: #fff; transition: transform 0.25s ease, box-shadow 0.25s ease; }
+  .l-masala .dish:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -24px rgba(92, 16, 16, 0.45); }
+  .l-masala .dish img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+  .l-masala .dish-body { padding: 20px; display: grid; gap: 10px; align-content: start; }
+  .l-masala .dish-top { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .l-masala .dish h3 { font-size: 1.45rem; line-height: 1.15; }
+  .l-masala .price { font-weight: 700; color: var(--red); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .l-masala .dish p { color: var(--muted); }
+  .l-masala .loved { font-size: 0.88rem; font-weight: 600; color: #8a5a0b !important; }
+  .l-masala .order { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .l-masala .order a { flex: 1 1 140px; text-align: center; padding: 12px 14px; border-radius: 10px; background: var(--red); color: #fff6e9; text-decoration: none; font-weight: 700; font-size: 0.95rem; }
+  .l-masala .order a + a { background: transparent; color: var(--red); border: 1.5px solid var(--red); }
+  @media (min-width: 900px) { .l-masala .dishes { grid-template-columns: repeat(3, 1fr); } .l-masala .menu { padding: 128px 40px; } }
+
+  .l-masala .band { background: var(--saffron); padding: 80px 20px; }
+  .l-masala .band blockquote { max-width: 960px; margin: 0 auto; }
+  .l-masala .band p { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2.6rem); line-height: 1.2; color: #2a1410; }
+  .l-masala .band footer { margin-top: 18px; font-weight: 600; color: #5a3a12; }
+
+  .l-masala .story { display: grid; gap: 28px; padding: 88px 20px; max-width: 1240px; margin: 0 auto; align-items: center; }
+  .l-masala .story-img { width: 100%; border-radius: 16px; aspect-ratio: 14 / 9; object-fit: cover; }
+  .l-masala .story-copy h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--red); margin-bottom: 16px; }
+  .l-masala .story-copy p { color: var(--muted); max-width: 52ch; }
+  @media (min-width: 900px) { .l-masala .story { grid-template-columns: 1.3fr 1fr; gap: 72px; padding: 128px 40px; } }
+
+  .l-masala .reviews { background: var(--red); color: #fff6e9; padding: 88px 20px; }
+  .l-masala .reviews h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); max-width: 1240px; margin: 0 auto 32px; }
+  .l-masala .reviews ul { display: grid; gap: 28px; max-width: 1240px; margin: 0 auto; }
+  .l-masala .reviews li p { font-size: 1.2rem; line-height: 1.5; }
+  .l-masala .reviews li span { display: block; margin-top: 12px; color: var(--saffron); font-weight: 600; }
+  @media (min-width: 900px) { .l-masala .reviews ul { grid-template-columns: 1fr 1fr; gap: 64px; } .l-masala .reviews { padding: 120px 40px; } }
+
+  .l-masala .visit { display: grid; gap: 32px; max-width: 1240px; margin: 0 auto; padding: 88px 20px; }
+  .l-masala .visit h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--red); margin-bottom: 18px; }
+  .l-masala .addr { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; color: var(--muted); }
+  .l-masala .addr svg { flex: none; margin-top: 3px; color: var(--red); }
+  .l-masala .hours-wrap { margin-top: 22px; }
+  .l-masala .open-status { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px; background: #fbeee0; color: #7a4a06; }
+  .l-masala .open-status[data-state='open'] { background: #e6f4ea; color: #1d6b34; }
+  .l-masala .hours { width: 100%; border-collapse: collapse; }
+  .l-masala .hours th, .l-masala .hours td { text-align: left; padding: 10px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+  .l-masala .hours td { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .l-masala .hours tr[data-today] th, .l-masala .hours tr[data-today] td { color: var(--red); font-weight: 700; }
+  .l-masala .map { border-radius: 16px; overflow: hidden; min-height: 340px; background: #f6efe9; }
+  .l-masala .map iframe { width: 100%; height: 100%; min-height: 340px; border: 0; }
+  @media (min-width: 900px) { .l-masala .visit { grid-template-columns: 1fr 1.2fr; gap: 64px; padding: 128px 40px; } }
+
+  .l-masala .foot { background: #2a1410; color: #e8d4c8; padding: 40px 20px; text-align: center; display: grid; gap: 6px; }
+  .l-masala .foot .mark { color: #fff6e9; }
+  .l-masala .credit { font-size: 0.82rem; opacity: 0.8; }
+</style>

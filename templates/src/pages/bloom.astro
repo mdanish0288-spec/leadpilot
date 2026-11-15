@@ -1,0 +1,193 @@
+---
+// Layout 6 — "Bloom": nail and beauty studio. Blush + deep plum, staggered gallery. Sample business, Mumbai (Indian style).
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import ActionBar from '../components/ActionBar.astro';
+import { srcset, unsplash } from '../lib/img';
+import { telLink, waLink, mapEmbed } from '../lib/types';
+
+const biz = {
+  name: 'Petal & Polish Nail Studio',
+  short: 'Petal & Polish',
+  area: 'Bandra West',
+  city: 'Mumbai',
+  address: '14 Chapel Road, Bandra West, Mumbai, Maharashtra 400050',
+  phoneDisplay: '+91 91234 56780',
+  phoneIntl: '+919123456780',
+  rating: 4.8,
+  reviews: 643,
+  tz: 'Asia/Kolkata',
+  hours: { mon: ['11:00', '21:00'], tue: ['11:00', '21:00'], wed: ['11:00', '21:00'], thu: ['11:00', '21:00'], fri: ['11:00', '21:30'], sat: ['10:00', '21:30'], sun: ['10:00', '20:00'] } as const,
+};
+const services = [
+  { name: 'Gel manicure', time: '45 min', price: '₹1,200' },
+  { name: 'Gel extensions with art', time: '90 min', price: '₹2,800' },
+  { name: 'Spa pedicure', time: '60 min', price: '₹1,500' },
+  { name: 'Classic French', time: '50 min', price: '₹1,400' },
+  { name: 'Nail art (per set)', time: '30 min', price: 'from ₹600' },
+];
+const reviews = [
+  { text: 'My gel extensions lasted almost four weeks without a single chip. The art is so neat and detailed.', name: 'Zara K.' },
+  { text: 'Super hygienic, they open fresh tools in front of you. Lovely staff and the space is so pretty.', name: 'Meera D.' },
+  { text: 'Got bridal nails done here. They matched my lehenga colour perfectly. Highly recommend.', name: 'Ishita P.' },
+];
+const book = waLink(biz.phoneIntl, `Hi ${biz.short}, I'd like to book an appointment.`);
+---
+<Base
+  title={`${biz.name} — nails in ${biz.area}, ${biz.city}`}
+  description={`Gel manicures, extensions and nail art on Chapel Road, ${biz.area}. Rated ${biz.rating} from ${biz.reviews} Google reviews.`}
+  fonts="family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,600"
+  themeColor="#f7e8e4"
+  bodyClass="l-bloom"
+  demo={{ business: biz.name, agency: '[Your Business Name]', note: 'Layout preview — sample business and sample photos' }}
+>
+  <header class="top">
+    <a class="mark" href="#main">Petal <span>&amp;</span> Polish</a>
+    <a class="btn small" href={book} target="_blank" rel="noopener"><Icon name="calendar" size={16} />Book</a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <h1 data-hero>Nails you’ll keep looking at</h1>
+        <p class="lead" data-hero>Gel, extensions and hand-painted nail art on Chapel Road, {biz.area}.</p>
+        <p class="rating" data-hero><span class="stars" aria-hidden="true">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={15} />)}</span><strong>{biz.rating}</strong> from {biz.reviews} Google reviews</p>
+        <div class="hero-cta" data-hero>
+          <a class="btn" href={book} target="_blank" rel="noopener"><Icon name="chat" size={18} />Book on WhatsApp</a>
+          <a class="btn btn-line" href="#services">See prices</a>
+        </div>
+      </div>
+      <div class="stack" data-hero>
+        <img class="s1" src={unsplash('1604654894610-df63bc536371', 800, 1000)} srcset={srcset('1604654894610-df63bc536371', 1.25, [400, 800])} sizes="(min-width: 900px) 24vw, 50vw" width="800" height="1000" alt="Dark glossy nails with gold accents" fetchpriority="high" />
+        <img class="s2" src={unsplash('1610992015732-2449b76344bc', 800, 1000)} srcset={srcset('1610992015732-2449b76344bc', 1.25, [400, 800])} sizes="(min-width: 900px) 24vw, 50vw" width="800" height="1000" alt="Soft nude manicure" />
+      </div>
+    </section>
+
+    <section id="services" class="services"><div class="inner">
+      <h2 data-reveal>Menu and prices</h2>
+      <ul>
+        {services.map((s) => (
+          <li data-reveal>
+            <div><h3>{s.name}</h3><span class="time"><Icon name="clock" size={14} />{s.time}</span></div>
+            <span class="price">{s.price}</span>
+          </li>
+        ))}
+      </ul>
+      <a class="btn" href={book} target="_blank" rel="noopener" data-reveal><Icon name="chat" size={18} />Book your slot</a>
+    </div></section>
+
+    <section class="gallery" aria-label="Recent work">
+      <h2 data-reveal>Recent sets</h2>
+      <div class="grid">
+        <img data-reveal src={unsplash('1632345031435-8727f6897d53', 700, 900)} width="700" height="900" alt="Manicure in progress at the studio" loading="lazy" />
+        <img data-reveal src={unsplash('1519014816548-bf5fe059798b', 700, 900)} width="700" height="900" alt="Red nail art with hand-painted lettering" loading="lazy" />
+        <img data-reveal src={unsplash('1487412947147-5cebf100ffc2', 700, 900)} width="700" height="900" alt="Soft glam makeup" loading="lazy" />
+        <img data-reveal src={unsplash('1521590832167-7bcbfaa6381f', 700, 900)} width="700" height="900" alt="Studio interior with pink chairs" loading="lazy" />
+      </div>
+    </section>
+
+    <section class="reviews">
+      <h2 data-reveal>Clients say</h2>
+      <ul>
+        {reviews.map((r) => (
+          <li data-reveal><p>“{r.text}”</p><span>{r.name}, Google review</span></li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="visit">
+      <div data-reveal>
+        <h2>Find the studio</h2>
+        <p class="addr"><Icon name="pin" size={18} />{biz.address}</p>
+        <p class="addr"><Icon name="phone" size={18} /><a href={telLink(biz.phoneIntl)}>{biz.phoneDisplay}</a></p>
+        <Hours hours={biz.hours} tz={biz.tz} style="in" class="hours-wrap" />
+      </div>
+      <div class="map" data-reveal>
+        <iframe title={`Map showing ${biz.name}`} src={mapEmbed(`${biz.name}, ${biz.address}`)} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p class="mark">Petal <span>&amp;</span> Polish</p>
+    <p>{biz.address}</p>
+    <p class="credit">Sample photos: Unsplash</p>
+  </footer>
+
+  <ActionBar
+    secondary={[{ label: 'Call', href: telLink(biz.phoneIntl), icon: 'phone' }]}
+    primary={{ label: 'Book on WhatsApp', href: book, icon: 'chat' }}
+  />
+</Base>
+
+<style is:global>
+  .l-bloom {
+    --bg: #f7e8e4; --fg: #3b2232; --muted: #6e5262; --plum: #3b2232; --rose: #c98b8f; --gold: #b08a55; --paper: #fdf6f3; --accent: #3b2232; --on-accent: #fdf6f3;
+    --line: #e8cfc9; --line-strong: #cfa9a6; --focus: #3b2232; --bar-bg: #fdf6f3; --bar-radius: 999px;
+    --font-display: 'DM Serif Display', Georgia, serif; --font-body: 'DM Sans', system-ui, sans-serif;
+  }
+  .l-bloom h1, .l-bloom h2, .l-bloom h3, .l-bloom .mark { font-family: var(--font-display); font-weight: 400; }
+  .l-bloom .top { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; max-width: 1280px; margin: 0 auto; }
+  .l-bloom .mark { font-size: 1.45rem; text-decoration: none; }
+  .l-bloom .mark span { color: var(--rose); font-style: italic; }
+  .l-bloom .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 24px; border-radius: 999px; background: var(--plum); color: var(--paper); text-decoration: none; font-weight: 600; transition: transform 0.2s ease; }
+  .l-bloom .btn:hover { transform: translateY(-2px); }
+  .l-bloom .btn.small { min-height: 42px; padding: 0 18px; font-size: 0.92rem; }
+  .l-bloom .btn-line { background: transparent; color: var(--plum); border: 1.5px solid var(--plum); }
+
+  .l-bloom .hero { display: grid; gap: 40px; padding: 28px 20px 80px; max-width: 1280px; margin: 0 auto; align-items: center; }
+  .l-bloom h1 { font-size: clamp(2.8rem, 8vw, 6rem); line-height: 1; letter-spacing: -0.02em; max-width: 11ch; }
+  .l-bloom .lead { margin-top: 18px; font-size: 1.15rem; color: var(--muted); max-width: 38ch; }
+  .l-bloom .rating { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; color: var(--muted); }
+  .l-bloom .rating strong { color: var(--fg); }
+  .l-bloom .stars { display: inline-flex; gap: 2px; color: var(--gold); }
+  .l-bloom .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .l-bloom .stack { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .l-bloom .stack img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 999px 999px 24px 24px; }
+  .l-bloom .stack .s2 { margin-top: 48px; }
+  @media (min-width: 900px) { .l-bloom .hero { grid-template-columns: 1fr 1fr; gap: 72px; padding: 48px 40px 128px; } .l-bloom .top { padding: 24px 40px; } .l-bloom .stack .s2 { margin-top: 96px; } }
+
+  .l-bloom .services { background: var(--plum); color: var(--paper); padding: 88px 20px; }
+  .l-bloom .services .inner { max-width: 880px; margin: 0 auto; }
+  .l-bloom .services h2 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); margin-bottom: 28px; }
+  .l-bloom .services li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0; border-bottom: 1px solid rgba(253, 246, 243, 0.18); }
+  .l-bloom .services h3 { font-size: 1.45rem; }
+  .l-bloom .time { display: inline-flex; gap: 6px; align-items: center; color: #e2c6cf; font-size: 0.92rem; margin-top: 4px; }
+  .l-bloom .services .price { font-weight: 600; font-size: 1.1rem; white-space: nowrap; color: #f1c9b5; }
+  .l-bloom .services .btn { margin-top: 36px; background: var(--paper); color: var(--plum); }
+  @media (min-width: 900px) { .l-bloom .services { padding: 128px 40px; } }
+
+  .l-bloom .gallery { padding: 88px 20px; max-width: 1280px; margin: 0 auto; }
+  .l-bloom .gallery h2 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); margin-bottom: 28px; }
+  .l-bloom .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .l-bloom .grid img { width: 100%; aspect-ratio: 7 / 9; object-fit: cover; border-radius: 20px; }
+  .l-bloom .grid img:nth-child(even) { transform: translateY(32px); }
+  @media (min-width: 900px) { .l-bloom .grid { grid-template-columns: repeat(4, 1fr); gap: 18px; } .l-bloom .gallery { padding: 128px 40px 160px; } }
+
+  .l-bloom .reviews { background: var(--paper); padding: 88px 20px; }
+  .l-bloom .reviews h2, .l-bloom .reviews ul { max-width: 1200px; margin-left: auto; margin-right: auto; }
+  .l-bloom .reviews h2 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); margin-bottom: 28px; }
+  .l-bloom .reviews ul { display: grid; gap: 28px; }
+  .l-bloom .reviews li p { font-family: var(--font-display); font-size: 1.45rem; line-height: 1.3; }
+  .l-bloom .reviews li span { display: block; margin-top: 10px; color: var(--muted); font-size: 0.95rem; }
+  @media (min-width: 900px) { .l-bloom .reviews ul { grid-template-columns: repeat(3, 1fr); gap: 48px; } .l-bloom .reviews { padding: 120px 40px; } }
+
+  .l-bloom .visit { display: grid; gap: 32px; max-width: 1200px; margin: 0 auto; padding: 88px 20px; }
+  .l-bloom .visit h2 { font-size: clamp(2.2rem, 5.5vw, 3.6rem); margin-bottom: 18px; }
+  .l-bloom .addr { display: flex; gap: 10px; color: var(--muted); margin-bottom: 8px; }
+  .l-bloom .addr svg { flex: none; margin-top: 3px; color: var(--plum); }
+  .l-bloom .hours-wrap { margin-top: 20px; }
+  .l-bloom .open-status { display: inline-block; padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; background: var(--paper); color: var(--muted); }
+  .l-bloom .open-status[data-state='open'] { color: #2f6b3e; }
+  .l-bloom .hours { width: 100%; border-collapse: collapse; }
+  .l-bloom .hours th, .l-bloom .hours td { text-align: left; padding: 9px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+  .l-bloom .hours td { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .l-bloom .hours tr[data-today] th, .l-bloom .hours tr[data-today] td { color: var(--plum); font-weight: 600; }
+  .l-bloom .map { border-radius: 24px; overflow: hidden; min-height: 340px; background: var(--paper); }
+  .l-bloom .map iframe { width: 100%; height: 100%; min-height: 340px; border: 0; }
+  @media (min-width: 900px) { .l-bloom .visit { grid-template-columns: 1fr 1.2fr; gap: 64px; padding: 128px 40px; } }
+
+  .l-bloom .foot { padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 6px; border-top: 1px solid var(--line); }
+  .l-bloom .credit { font-size: 0.82rem; }
+</style>

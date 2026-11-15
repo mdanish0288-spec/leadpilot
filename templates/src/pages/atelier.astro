@@ -1,0 +1,192 @@
+---
+// Layout 5 — "Atelier": luxury hair salon. Airy editorial serif, champagne hairlines. Sample business, New York (US style).
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import ActionBar from '../components/ActionBar.astro';
+import { srcset, unsplash } from '../lib/img';
+import { telLink, waLink, mapEmbed } from '../lib/types';
+
+const biz = {
+  name: 'Maison Lune Hair Atelier',
+  short: 'Maison Lune',
+  area: 'Upper East Side',
+  city: 'New York',
+  address: '1061 Madison Ave, New York, NY 10028',
+  phoneDisplay: '(212) 555-0136',
+  phoneIntl: '+12125550136',
+  rating: 4.9,
+  reviews: 528,
+  tz: 'America/New_York',
+  hours: { tue: ['10:00', '19:00'], wed: ['10:00', '19:00'], thu: ['10:00', '20:00'], fri: ['10:00', '20:00'], sat: ['09:00', '18:00'], sun: ['10:00', '16:00'] } as const,
+};
+const services = [
+  { group: 'Cut and style', items: [['Signature cut and blowout', 'from $145'], ['Blowout', 'from $75'], ['Event styling', 'from $120']] },
+  { group: 'Color', items: [['Single-process color', 'from $160'], ['Balayage', 'from $325'], ['Gloss and tone', 'from $95']] },
+  { group: 'Treatments', items: [['Bond-repair treatment', 'from $65'], ['Scalp ritual', 'from $85']] },
+];
+const reviews = [
+  { text: 'The most natural balayage I have ever had. Everyone asks who does my color.', name: 'Caroline D.' },
+  { text: 'Calm, beautiful space and a stylist who actually listens. Worth every penny.', name: 'Elena M.' },
+];
+const book = waLink(biz.phoneIntl, `Hello ${biz.short}, I would like to book an appointment.`);
+---
+<Base
+  title={`${biz.name} — hair salon on the ${biz.area}, ${biz.city}`}
+  description={`Precision cuts, balayage and color on Madison Avenue. Rated ${biz.rating} from ${biz.reviews} Google reviews.`}
+  fonts="family=Cormorant+Garamond:wght@400;500&family=Jost:wght@400;500"
+  themeColor="#f3efe9"
+  bodyClass="l-atelier"
+  demo={{ business: biz.name, agency: '[Your Business Name]', note: 'Layout preview — sample business and sample photos' }}
+>
+  <header class="top">
+    <a href={telLink(biz.phoneIntl)} class="side">{biz.phoneDisplay}</a>
+    <a class="mark" href="#main">Maison Lune</a>
+    <a href={book} class="side right" target="_blank" rel="noopener">Book</a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <h1 data-hero>Hair, considered</h1>
+      <p class="sub" data-hero>A quiet atelier for cut and color on Madison Avenue</p>
+      <figure class="hero-img" data-hero>
+        <img data-parallax src={unsplash('1600948836101-f9ffda59d250', 2000, 1100)} srcset={srcset('1600948836101-f9ffda59d250', 0.55, [800, 1400, 2000])} sizes="100vw" width="2000" height="1100" alt="Minimal salon interior with round mirrors and styling chairs" fetchpriority="high" />
+      </figure>
+      <div class="hero-meta" data-hero>
+        <p><span class="stars" aria-hidden="true">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={13} />)}</span> {biz.rating} from {biz.reviews} Google reviews</p>
+        <a class="btn" href={book} target="_blank" rel="noopener">Book an appointment</a>
+      </div>
+    </section>
+
+    <section class="intro" data-reveal>
+      <p>Every appointment begins with a conversation: how you wear your hair, how much time you give it each morning, and what you want it to say. Then our stylists cut, color and finish by hand, in a calm room a block from Central Park.</p>
+    </section>
+
+    <section class="services">
+      <div class="svc-img" data-reveal>
+        <img src={unsplash('1595476108010-b4d1f102b1b1', 1000, 1300)} srcset={srcset('1595476108010-b4d1f102b1b1', 1.3, [500, 1000])} sizes="(min-width: 900px) 40vw, 100vw" width="1000" height="1300" alt="Stylist finishing a client's hair" loading="lazy" />
+      </div>
+      <div class="svc-list">
+        <h2 data-reveal>Services</h2>
+        {services.map((g) => (
+          <div class="svc-group" data-reveal>
+            <h3>{g.group}</h3>
+            <ul>{g.items.map(([n, p]) => <li><span>{n}</span><span class="p">{p}</span></li>)}</ul>
+          </div>
+        ))}
+        <p class="note" data-reveal>Final price depends on hair length and stylist level. We confirm it before we begin.</p>
+      </div>
+    </section>
+
+    <section class="reviews">
+      {reviews.map((r) => (
+        <blockquote data-reveal>
+          <p>“{r.text}”</p>
+          <footer>{r.name}, Google review</footer>
+        </blockquote>
+      ))}
+    </section>
+
+    <section class="strip" aria-label="Photos">
+      <img data-reveal src={unsplash('1522337360788-8b13dee7a37e', 900, 1100)} width="900" height="1100" alt="Long glossy hair after a treatment" loading="lazy" />
+      <img data-reveal src={unsplash('1560066984-138dadb4c035', 900, 1100)} width="900" height="1100" alt="Salon styling stations in black and white" loading="lazy" />
+    </section>
+
+    <section class="visit">
+      <div data-reveal>
+        <h2>Visit</h2>
+        <p class="addr"><Icon name="pin" size={18} />{biz.address}</p>
+        <p class="addr"><Icon name="phone" size={18} /><a href={telLink(biz.phoneIntl)}>{biz.phoneDisplay}</a></p>
+        <Hours hours={biz.hours} tz={biz.tz} style="us" class="hours-wrap" />
+      </div>
+      <div class="map" data-reveal>
+        <iframe title={`Map showing ${biz.name}`} src={mapEmbed(`${biz.name}, ${biz.address}`)} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p class="mark">Maison Lune</p>
+    <p>{biz.address}</p>
+    <p class="credit">Sample photos: Unsplash</p>
+  </footer>
+
+  <ActionBar
+    secondary={[{ label: 'Call', href: telLink(biz.phoneIntl), icon: 'phone' }]}
+    primary={{ label: 'Book on WhatsApp', href: book, icon: 'calendar' }}
+  />
+</Base>
+
+<style is:global>
+  .l-atelier {
+    --bg: #f3efe9; --fg: #221d19; --muted: #5f564e; --gold: #a8885a; --stone: #e7e0d6; --accent: #221d19; --on-accent: #f3efe9;
+    --line: #d8cfc3; --line-strong: #b9ab98; --focus: #221d19; --bar-bg: #f3efe9; --bar-radius: 0px;
+    --font-display: 'Cormorant Garamond', Georgia, serif; --font-body: 'Jost', system-ui, sans-serif;
+  }
+  .l-atelier body, .l-atelier { font-size: 1.0625rem; }
+  .l-atelier h1, .l-atelier h2, .l-atelier h3, .l-atelier .mark { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+  .l-atelier .top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 20px; border-bottom: 1px solid var(--line); }
+  .l-atelier .mark { font-size: 1.6rem; text-decoration: none; text-align: center; }
+  .l-atelier .side { font-size: 0.92rem; text-decoration: none; color: var(--muted); letter-spacing: 0.02em; }
+  .l-atelier .side.right { justify-self: end; }
+  @media (max-width: 599px) { .l-atelier .top .side:first-child { visibility: hidden; } }
+
+  .l-atelier .hero { padding: 56px 20px 0; text-align: center; }
+  .l-atelier h1 { font-size: clamp(3.4rem, 13vw, 10rem); line-height: 0.92; letter-spacing: -0.03em; }
+  .l-atelier .sub { margin: 18px auto 0; color: var(--muted); font-size: 1.1rem; max-width: 46ch; }
+  .l-atelier .hero-img { margin: 40px -20px 0; overflow: hidden; height: 62svh; min-height: 360px; }
+  .l-atelier .hero-img img { width: 100%; height: 112%; object-fit: cover; }
+  .l-atelier .hero-meta { display: flex; flex-direction: column; gap: 18px; align-items: center; padding: 28px 0 0; color: var(--muted); }
+  .l-atelier .stars { display: inline-flex; gap: 2px; color: var(--gold); vertical-align: -1px; }
+  .l-atelier .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 34px; background: var(--fg); color: var(--bg); text-decoration: none; letter-spacing: 0.04em; transition: background-color 0.25s ease; }
+  .l-atelier .btn:hover { background: #3a322b; }
+  @media (min-width: 900px) {
+    .l-atelier .hero { padding: 88px 40px 0; }
+    .l-atelier .hero-img { margin: 56px 0 0; height: 74vh; }
+    .l-atelier .hero-meta { flex-direction: row; justify-content: space-between; max-width: 1280px; margin: 0 auto; }
+    .l-atelier .top { padding: 24px 40px; }
+  }
+
+  .l-atelier .intro { max-width: 860px; margin: 0 auto; padding: 112px 20px; text-align: center; }
+  .l-atelier .intro p { font-family: var(--font-display); font-size: clamp(1.6rem, 3.6vw, 2.5rem); line-height: 1.3; }
+  .l-atelier .intro::before { content: ''; display: block; width: 1px; height: 64px; background: var(--gold); margin: 0 auto 40px; }
+
+  .l-atelier .services { display: grid; gap: 40px; max-width: 1200px; margin: 0 auto; padding: 0 20px 112px; }
+  .l-atelier .svc-img img { width: 100%; aspect-ratio: 10 / 13; object-fit: cover; }
+  .l-atelier .svc-list h2 { font-size: clamp(2.4rem, 6vw, 4rem); margin-bottom: 24px; }
+  .l-atelier .svc-group { margin-bottom: 32px; }
+  .l-atelier .svc-group h3 { font-size: 1.6rem; color: var(--gold); padding-bottom: 8px; border-bottom: 1px solid var(--gold); margin-bottom: 4px; }
+  .l-atelier .svc-group li { display: flex; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .l-atelier .svc-group .p { color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .l-atelier .note { color: var(--muted); font-size: 0.95rem; }
+  @media (min-width: 900px) { .l-atelier .services { grid-template-columns: 1fr 1.1fr; gap: 96px; align-items: start; padding: 0 40px 160px; } .l-atelier .svc-img { position: sticky; top: 32px; } }
+
+  .l-atelier .reviews { background: var(--stone); padding: 96px 20px; display: grid; gap: 56px; }
+  .l-atelier .reviews blockquote { max-width: 760px; margin: 0 auto; text-align: center; }
+  .l-atelier .reviews p { font-family: var(--font-display); font-size: clamp(1.7rem, 4vw, 2.6rem); line-height: 1.2; }
+  .l-atelier .reviews footer { margin-top: 16px; color: var(--muted); font-size: 0.95rem; }
+  @media (min-width: 900px) { .l-atelier .reviews { grid-template-columns: repeat(2, minmax(0, 520px)); justify-content: center; padding: 140px 40px; gap: 96px; } }
+
+  .l-atelier .strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .l-atelier .strip img { width: 100%; height: 100%; aspect-ratio: 9 / 11; object-fit: cover; }
+
+  .l-atelier .visit { display: grid; gap: 32px; max-width: 1200px; margin: 0 auto; padding: 112px 20px; }
+  .l-atelier .visit h2 { font-size: clamp(2.4rem, 6vw, 4rem); margin-bottom: 18px; }
+  .l-atelier .addr { display: flex; gap: 10px; color: var(--muted); margin-bottom: 8px; }
+  .l-atelier .addr svg { flex: none; margin-top: 3px; color: var(--gold); }
+  .l-atelier .hours-wrap { margin-top: 22px; }
+  .l-atelier .open-status { display: inline-block; font-size: 0.92rem; margin-bottom: 8px; color: var(--muted); letter-spacing: 0.02em; }
+  .l-atelier .open-status[data-state='open'] { color: #3d6b45; }
+  .l-atelier .hours { width: 100%; border-collapse: collapse; }
+  .l-atelier .hours th, .l-atelier .hours td { text-align: left; padding: 10px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+  .l-atelier .hours td { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .l-atelier .hours tr[data-today] th, .l-atelier .hours tr[data-today] td { color: var(--fg); font-weight: 500; }
+  .l-atelier .map { min-height: 360px; background: var(--stone); }
+  .l-atelier .map iframe { width: 100%; height: 100%; min-height: 360px; border: 0; filter: grayscale(1) contrast(0.95); }
+  @media (min-width: 900px) { .l-atelier .visit { grid-template-columns: 1fr 1.3fr; gap: 80px; padding: 160px 40px; } }
+
+  .l-atelier .action-bar a { font-weight: 500; letter-spacing: 0.02em; }
+  .l-atelier .foot { border-top: 1px solid var(--line); padding: 40px 20px; text-align: center; color: var(--muted); display: grid; gap: 6px; }
+  .l-atelier .foot .mark { color: var(--fg); }
+  .l-atelier .credit { font-size: 0.82rem; }
+</style>

@@ -1,0 +1,236 @@
+---
+// Layout 1 — "Ember": dark, warm specialty cafe. Sample business, Toronto (Canadian style).
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import ActionBar from '../components/ActionBar.astro';
+import { srcset, unsplash } from '../lib/img';
+import { telLink, waLink, mapEmbed, mapLink } from '../lib/types';
+
+const biz = {
+  name: 'Ember & Oak Coffee',
+  area: 'Leslieville',
+  city: 'Toronto',
+  address: '1120 Queen St E, Toronto, ON M4M 1K8',
+  phoneDisplay: '(416) 555-0142',
+  phoneIntl: '+14165550142',
+  rating: 4.8,
+  reviews: 412,
+  tz: 'America/Toronto',
+  hours: { mon: ['07:00', '18:00'], tue: ['07:00', '18:00'], wed: ['07:00', '18:00'], thu: ['07:00', '19:00'], fri: ['07:00', '19:00'], sat: ['08:00', '19:00'], sun: ['08:00', '17:00'] } as const,
+};
+const menu = [
+  { group: 'Espresso bar', items: [['Flat white', '5.25'], ['Cortado', '4.75'], ['Maple oat latte', '6.50'], ['Espresso tonic', '6.00']] },
+  { group: 'From the oven', items: [['Brown butter croissant', '4.50'], ['Cardamom bun', '5.00'], ['Sourdough toast, cultured butter', '6.75'], ['Seasonal fruit galette', '6.25']] },
+];
+const reviews = [
+  { text: 'The flat white is the best I’ve had east of the Don Valley. Staff remember your order by the second visit.', name: 'Priya S.' },
+  { text: 'Cardamom buns sell out by ten on Saturdays, and now I know why. Cosy, calm, and the music is never too loud.', name: 'Marcus L.' },
+  { text: 'My go-to spot for working mornings. Big windows, good light, and the espresso tonic is a summer must.', name: 'Hannah W.' },
+];
+const wa = waLink(biz.phoneIntl, `Hi ${biz.name}, I found your website and have a question.`);
+---
+<Base
+  title={`${biz.name} — specialty coffee in ${biz.area}, ${biz.city}`}
+  description={`Slow-roasted coffee and fresh pastries on Queen Street East in ${biz.area}. Rated ${biz.rating} from ${biz.reviews} Google reviews.`}
+  fonts="family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Figtree:wght@400;600"
+  themeColor="#1e1410"
+  bodyClass="l-ember"
+  demo={{ business: biz.name, agency: '[Your Business Name]', note: 'Layout preview — sample business and sample photos' }}
+>
+  <header class="top">
+    <a class="mark" href="#main">Ember <span>&amp;</span> Oak</a>
+    <nav aria-label="Main">
+      <a href="#menu">Menu</a>
+      <a href="#visit">Visit</a>
+      <a class="call" href={telLink(biz.phoneIntl)}><Icon name="phone" size={16} />{biz.phoneDisplay}</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-media">
+        <img data-parallax src={unsplash('1442512595331-e89e73853f31', 1600)} srcset={srcset('1442512595331-e89e73853f31')} sizes="100vw" width="1600" height="1067" alt="Barista pouring a slow pour-over coffee at the bar" fetchpriority="high" />
+      </div>
+      <div class="hero-copy">
+        <p class="where" data-hero><Icon name="pin" size={16} />{biz.area}, {biz.city}</p>
+        <h1 data-hero>Slow-roasted coffee on Queen Street East</h1>
+        <p class="rating" data-hero>
+          <span class="stars" aria-hidden="true">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={15} />)}</span>
+          <strong>{biz.rating}</strong> from {biz.reviews} Google reviews
+        </p>
+        <div class="hero-cta" data-hero>
+          <a class="btn btn-accent" href={mapLink(biz.address)} target="_blank" rel="noopener"><Icon name="pin" size={18} />Get directions</a>
+          <a class="btn btn-ghost" href="#menu">See the menu</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="quote" data-reveal>
+      <blockquote>
+        <p>“{reviews[0].text}”</p>
+        <footer>{reviews[0].name}, Google review</footer>
+      </blockquote>
+    </section>
+
+    <section id="menu" class="menu">
+      <div class="menu-head" data-reveal>
+        <h2>On the bar today</h2>
+        <p>Prices in CAD, taken from the menu board. Oat, almond and lactose-free milk at no extra charge.</p>
+      </div>
+      <div class="menu-cols">
+        {menu.map((g) => (
+          <div class="menu-group" data-reveal>
+            <h3>{g.group}</h3>
+            <ul>
+              {g.items.map(([n, p]) => (
+                <li><span class="item">{n}</span><span class="dots" aria-hidden="true"></span><span class="price">${p}</span></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="story">
+      <figure class="story-img" data-reveal>
+        <img src={unsplash('1554118811-1e0d58224f24', 1000, 1250)} srcset={srcset('1554118811-1e0d58224f24', 1.25, [480, 800, 1000])} sizes="(min-width: 900px) 45vw, 100vw" width="1000" height="1250" alt="Bright cafe interior with wooden tables and plants" loading="lazy" />
+      </figure>
+      <div class="story-copy" data-reveal>
+        <h2>A neighbourhood room with big windows</h2>
+        <p>Regulars come for the morning light along Queen Street and stay for a second cup. Beans are roasted in small batches every week, pastries come out of the oven before the doors open, and the bar is always happy to talk you through a new single origin.</p>
+        <p>Laptop-friendly on weekdays, family-friendly on weekends, and a short walk from Jimmie Simpson Park.</p>
+      </div>
+    </section>
+
+    <section class="gallery" aria-label="Photos">
+      <img data-reveal src={unsplash('1509042239860-f550ce710b93', 900, 1100)} width="900" height="1100" alt="Two flat whites with latte art" loading="lazy" />
+      <img data-reveal src={unsplash('1511920170033-f8396924c348', 900, 700)} width="900" height="700" alt="Freshly ground coffee and beans" loading="lazy" />
+      <img data-reveal src={unsplash('1495474472287-4d71bcdd2085', 900, 700)} width="900" height="700" alt="Friends toasting with lattes" loading="lazy" />
+    </section>
+
+    <section class="reviews">
+      <h2 data-reveal>What regulars say</h2>
+      <ul>
+        {reviews.map((r) => (
+          <li data-reveal>
+            <span class="stars" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={14} />)}</span>
+            <p>“{r.text}”</p>
+            <span class="who">{r.name}, Google review</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section id="visit" class="visit">
+      <div class="visit-info" data-reveal>
+        <h2>Come by</h2>
+        <p class="addr"><Icon name="pin" size={18} />{biz.address}</p>
+        <p class="addr"><Icon name="phone" size={18} /><a href={telLink(biz.phoneIntl)}>{biz.phoneDisplay}</a></p>
+        <Hours hours={biz.hours} tz={biz.tz} style="ca" class="hours-wrap" />
+      </div>
+      <div class="map" data-reveal>
+        <iframe title={`Map showing ${biz.name}`} src={mapEmbed(`${biz.name}, ${biz.address}`)} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p class="mark">Ember <span>&amp;</span> Oak</p>
+    <p>{biz.address}</p>
+    <p class="credit">Sample photos: Unsplash</p>
+  </footer>
+
+  <ActionBar
+    secondary={[{ label: 'Call', href: telLink(biz.phoneIntl), icon: 'phone' }, { label: 'WhatsApp', href: wa, icon: 'chat' }]}
+    primary={{ label: 'Directions', href: mapLink(biz.address), icon: 'pin' }}
+  />
+</Base>
+
+<style is:global>
+  .l-ember {
+    --bg: #1e1410; --surface: #2a1d16; --fg: #f3e6d6; --muted: #c4ad97; --accent: #e09a52; --on-accent: #1e1410;
+    --line: rgba(243, 230, 214, 0.14); --line-strong: rgba(243, 230, 214, 0.35); --focus: #e09a52; --bar-bg: #1e1410;
+    --font-display: 'Fraunces', Georgia, serif; --font-body: 'Figtree', system-ui, sans-serif;
+  }
+  .l-ember h1, .l-ember h2, .l-ember h3, .l-ember .mark { font-family: var(--font-display); font-weight: 400; font-variation-settings: 'opsz' 144; letter-spacing: -0.02em; }
+  .l-ember .mark { font-size: 1.5rem; text-decoration: none; }
+  .l-ember .mark span { color: var(--accent); }
+
+  .l-ember .top { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; max-width: 1280px; margin: 0 auto; }
+  .l-ember .top nav { display: flex; gap: 22px; align-items: center; }
+  .l-ember .top nav a { text-decoration: none; font-weight: 600; font-size: 0.95rem; color: var(--muted); }
+  .l-ember .top nav a:hover { color: var(--fg); }
+  .l-ember .top .call { display: none; }
+  @media (min-width: 900px) { .l-ember .top .call { display: inline-flex; gap: 8px; align-items: center; color: var(--fg); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 999px; } .l-ember .top { padding: 24px 40px; } }
+
+  .l-ember .hero { position: relative; min-height: 86svh; display: grid; align-items: end; overflow: hidden; margin: 0 12px; border-radius: 20px; }
+  .l-ember .hero-media { position: absolute; inset: 0; }
+  .l-ember .hero-media img { width: 100%; height: 108%; object-fit: cover; }
+  .l-ember .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(30, 20, 16, 0.1) 20%, rgba(30, 20, 16, 0.92) 88%); }
+  .l-ember .hero-copy { position: relative; z-index: 1; padding: 28px 22px 32px; max-width: 900px; }
+  .l-ember .where { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-weight: 600; margin-bottom: 14px; }
+  .l-ember h1 { font-size: clamp(2.6rem, 8vw, 5.75rem); line-height: 1.02; }
+  .l-ember .rating { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 18px; color: var(--muted); }
+  .l-ember .rating strong { color: var(--fg); }
+  .l-ember .stars { display: inline-flex; gap: 2px; color: var(--accent); }
+  .l-ember .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .l-ember .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 24px; border-radius: 999px; text-decoration: none; font-weight: 600; transition: transform 0.2s ease, background-color 0.2s ease; }
+  .l-ember .btn:hover { transform: translateY(-2px); }
+  .l-ember .btn-accent { background: var(--accent); color: var(--on-accent); }
+  .l-ember .btn-ghost { border: 1.5px solid var(--line-strong); }
+  @media (min-width: 900px) { .l-ember .hero { margin: 0 24px; border-radius: 28px; } .l-ember .hero-copy { padding: 64px; } }
+
+  .l-ember .quote { max-width: 980px; margin: 0 auto; padding: 96px 22px; }
+  .l-ember .quote p { font-family: var(--font-display); font-size: clamp(1.6rem, 4vw, 2.75rem); line-height: 1.2; letter-spacing: -0.01em; }
+  .l-ember .quote footer { margin-top: 20px; color: var(--muted); }
+
+  .l-ember .menu { background: var(--surface); padding: 88px 22px; }
+  .l-ember .menu-head, .l-ember .menu-cols { max-width: 1100px; margin: 0 auto; }
+  .l-ember .menu-head h2 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.05; }
+  .l-ember .menu-head p { color: var(--muted); max-width: 52ch; margin-top: 12px; }
+  .l-ember .menu-cols { display: grid; gap: 48px; margin-top: 48px; }
+  .l-ember .menu-group h3 { font-size: 1.5rem; color: var(--accent); margin-bottom: 16px; }
+  .l-ember .menu-group li { display: flex; align-items: baseline; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 1.08rem; }
+  .l-ember .dots { flex: 1; border-bottom: 1px dotted var(--line-strong); transform: translateY(-4px); }
+  .l-ember .price { font-variant-numeric: tabular-nums; font-weight: 600; }
+  @media (min-width: 900px) { .l-ember .menu { padding: 128px 40px; } .l-ember .menu-cols { grid-template-columns: 1fr 1fr; gap: 72px; } }
+
+  .l-ember .story { display: grid; gap: 36px; max-width: 1200px; margin: 0 auto; padding: 96px 22px; align-items: center; }
+  .l-ember .story-img img { border-radius: 18px; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .l-ember .story-copy h2 { font-size: clamp(2rem, 4.5vw, 3.25rem); line-height: 1.06; margin-bottom: 20px; }
+  .l-ember .story-copy p { color: var(--muted); max-width: 56ch; margin-bottom: 14px; }
+  @media (min-width: 900px) { .l-ember .story { grid-template-columns: 5fr 6fr; gap: 80px; padding: 140px 40px; } }
+
+  .l-ember .gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 12px; max-width: 1280px; margin: 0 auto; }
+  .l-ember .gallery img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px; }
+  .l-ember .gallery img:first-child { grid-row: span 2; }
+  @media (min-width: 900px) { .l-ember .gallery { gap: 16px; padding: 0 24px; } }
+
+  .l-ember .reviews { max-width: 1200px; margin: 0 auto; padding: 96px 22px; }
+  .l-ember .reviews h2 { font-size: clamp(2rem, 4.5vw, 3.25rem); margin-bottom: 36px; }
+  .l-ember .reviews ul { display: grid; gap: 28px; }
+  .l-ember .reviews li { border-top: 1px solid var(--line-strong); padding-top: 22px; }
+  .l-ember .reviews li p { margin: 12px 0; font-size: 1.1rem; }
+  .l-ember .who { color: var(--muted); font-size: 0.92rem; }
+  @media (min-width: 900px) { .l-ember .reviews ul { grid-template-columns: repeat(3, 1fr); gap: 40px; } .l-ember .reviews { padding: 140px 40px; } }
+
+  .l-ember .visit { display: grid; gap: 32px; max-width: 1200px; margin: 0 auto; padding: 0 22px 96px; }
+  .l-ember .visit h2 { font-size: clamp(2rem, 4.5vw, 3.25rem); margin-bottom: 20px; }
+  .l-ember .addr { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; color: var(--muted); }
+  .l-ember .addr svg { flex: none; margin-top: 3px; color: var(--accent); }
+  .l-ember .hours-wrap { margin-top: 24px; }
+  .l-ember .open-status { display: inline-block; padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 12px; background: var(--surface); }
+  .l-ember .open-status[data-state='open'] { color: #9fd8a4; }
+  .l-ember .hours { width: 100%; border-collapse: collapse; }
+  .l-ember .hours th, .l-ember .hours td { text-align: left; padding: 10px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+  .l-ember .hours td { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .l-ember .hours tr[data-today] th, .l-ember .hours tr[data-today] td { color: var(--accent); font-weight: 600; }
+  .l-ember .map { border-radius: 18px; overflow: hidden; min-height: 340px; background: var(--surface); }
+  .l-ember .map iframe { width: 100%; height: 100%; min-height: 340px; border: 0; filter: grayscale(0.3) contrast(1.05); }
+  @media (min-width: 900px) { .l-ember .visit { grid-template-columns: 5fr 6fr; gap: 64px; padding: 0 40px 140px; } }
+
+  .l-ember .foot { border-top: 1px solid var(--line); padding: 40px 22px; text-align: center; color: var(--muted); display: grid; gap: 6px; }
+  .l-ember .foot .mark { color: var(--fg); }
+  .l-ember .credit { font-size: 0.82rem; opacity: 0.8; }
+</style>

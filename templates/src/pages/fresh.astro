@@ -1,0 +1,207 @@
+---
+// Layout 4 — "Fresh": home cleaning. Crisp teal + white, checklist-led. Sample business, Manchester (UK style).
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import ActionBar from '../components/ActionBar.astro';
+import { srcset, unsplash } from '../lib/img';
+import { telLink, waLink, mapEmbed } from '../lib/types';
+
+const biz = {
+  name: 'Brightside Home Cleaning',
+  city: 'Manchester',
+  address: '48 Wilmslow Road, Withington, Manchester M20 3BW',
+  areas: ['Didsbury', 'Withington', 'Chorlton', 'Fallowfield', 'Levenshulme', 'Sale', 'Stretford', 'Burnage'],
+  phoneDisplay: '07700 900123',
+  phoneIntl: '+447700900123',
+  rating: 4.9,
+  reviews: 236,
+  tz: 'Europe/London',
+  hours: { mon: ['08:00', '18:00'], tue: ['08:00', '18:00'], wed: ['08:00', '18:00'], thu: ['08:00', '18:00'], fri: ['08:00', '18:00'], sat: ['09:00', '15:00'] } as const,
+};
+const rooms = [
+  { room: 'Kitchen', items: ['Worktops, hob and splashback wiped and degreased', 'Outside of appliances and cupboard doors', 'Sink and taps descaled and polished', 'Floors hoovered and mopped'] },
+  { room: 'Bathrooms', items: ['Toilet, bath, shower and basin deep-cleaned', 'Tiles, glass and mirrors streak-free', 'Limescale removed from taps and screens', 'Bins emptied and floors mopped'] },
+  { room: 'Living areas and bedrooms', items: ['Dusting of surfaces, skirting boards and frames', 'Beds made (linen changed on request)', 'Carpets and rugs hoovered', 'Hard floors mopped'] },
+];
+const reviews = [
+  { text: 'Same cleaner every fortnight, always on time, and the flat genuinely sparkles. Booking over WhatsApp is so easy.', name: 'Laura P.' },
+  { text: 'Used them for an end-of-tenancy clean in Didsbury and got our full deposit back. Thorough and friendly.', name: 'Tom H.' },
+  { text: 'They bring their own eco products, which matters with two small kids and a dog. Brilliant service.', name: 'Nadia F.' },
+];
+const wa = waLink(biz.phoneIntl, `Hi ${biz.name}, I'd like a quote for a home clean. My postcode is: `);
+---
+<Base
+  title={`${biz.name} — house cleaners in South ${biz.city}`}
+  description={`Regular, deep and end-of-tenancy cleaning across South ${biz.city}. Rated ${biz.rating} from ${biz.reviews} Google reviews.`}
+  fonts="family=Plus+Jakarta+Sans:wght@400;600;800"
+  themeColor="#0b5d6b"
+  bodyClass="l-fresh"
+  demo={{ business: biz.name, agency: '[Your Business Name]', note: 'Layout preview — sample business and sample photos' }}
+>
+  <header class="top">
+    <a class="mark" href="#main"><span class="dot" aria-hidden="true"></span>Brightside</a>
+    <nav aria-label="Main"><a href="#included">What’s included</a><a href="#areas">Areas</a></nav>
+    <a class="btn btn-teal small" href={wa} target="_blank" rel="noopener"><Icon name="chat" size={16} />Get a quote</a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="pill" data-hero><Icon name="star" size={14} />{biz.rating} from {biz.reviews} Google reviews</p>
+        <h1 data-hero>A spotless home in South Manchester, without lifting a finger</h1>
+        <p class="lead" data-hero>Regular, deep and end-of-tenancy cleans in Didsbury, Chorlton, Withington and nearby. Same friendly cleaner each visit, eco products included.</p>
+        <div class="hero-cta" data-hero>
+          <a class="btn btn-teal" href={wa} target="_blank" rel="noopener"><Icon name="chat" size={18} />Get a quote on WhatsApp</a>
+          <a class="btn btn-soft" href={telLink(biz.phoneIntl)}><Icon name="phone" size={18} />{biz.phoneDisplay}</a>
+        </div>
+      </div>
+      <div class="hero-photos" data-hero>
+        <img class="p1" src={unsplash('1584622650111-993a426fbf0a', 900, 1100)} srcset={srcset('1584622650111-993a426fbf0a', 1.22, [450, 900])} sizes="(min-width: 900px) 28vw, 60vw" width="900" height="1100" alt="Bright, freshly cleaned bathroom" fetchpriority="high" />
+        <img class="p2" src={unsplash('1581578731548-c64695cc6952', 700, 700)} width="700" height="700" alt="Cleaner wiping a window frame" loading="lazy" />
+        <img class="p3" src={unsplash('1563453392212-326f5e854473', 600, 600)} width="600" height="600" alt="Gloved hand holding a spray bottle" loading="lazy" />
+      </div>
+    </section>
+
+    <section class="trust" data-reveal>
+      <ul>
+        <li><Icon name="shield" size={22} /><span><strong>Insured and DBS-checked</strong> cleaners</span></li>
+        <li><Icon name="check" size={22} /><span><strong>Eco products</strong> safe for kids and pets</span></li>
+        <li><Icon name="calendar" size={22} /><span><strong>Weekly, fortnightly</strong> or one-off</span></li>
+      </ul>
+    </section>
+
+    <section id="included" class="included">
+      <div class="inc-head" data-reveal>
+        <h2>What’s included in a standard clean</h2>
+        <p>Deep cleans add inside the oven, fridge and windows. Just ask on WhatsApp.</p>
+      </div>
+      <div class="rooms">
+        {rooms.map((r) => (
+          <div class="room" data-reveal>
+            <h3>{r.room}</h3>
+            <ul>{r.items.map((i) => <li><Icon name="check" size={18} />{i}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="reviews">
+      <h2 data-reveal>Loved by local households</h2>
+      <ul>
+        {reviews.map((r) => (
+          <li data-reveal>
+            <span class="stars" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={14} />)}</span>
+            <p>“{r.text}”</p>
+            <span class="who">{r.name}, Google review</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section id="areas" class="areas">
+      <div data-reveal>
+        <h2>Areas we cover</h2>
+        <ul class="chips">{biz.areas.map((a) => <li>{a}</li>)}</ul>
+        <p class="addr"><Icon name="pin" size={18} />{biz.address}</p>
+        <Hours hours={biz.hours} tz={biz.tz} style="uk" class="hours-wrap" />
+      </div>
+      <div class="map" data-reveal>
+        <iframe title={`Map showing ${biz.name}`} src={mapEmbed(`${biz.name}, ${biz.address}`)} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p class="mark"><span class="dot" aria-hidden="true"></span>Brightside</p>
+    <p>{biz.address}</p>
+    <p class="credit">Sample photos: Unsplash</p>
+  </footer>
+
+  <ActionBar
+    secondary={[{ label: 'Call', href: telLink(biz.phoneIntl), icon: 'phone' }]}
+    primary={{ label: 'Quote on WhatsApp', href: wa, icon: 'chat' }}
+  />
+</Base>
+
+<style is:global>
+  .l-fresh {
+    --bg: #ffffff; --fg: #0d2a30; --muted: #4b6469; --teal: #0b5d6b; --teal-2: #0e7486; --mint: #e7f5f2; --sky: #d8eef3; --sun: #ffd166; --accent: #0b5d6b; --on-accent: #ffffff;
+    --line: #dbe8ea; --line-strong: #b5ccd0; --focus: #0b5d6b; --bar-bg: #ffffff; --bar-radius: 14px;
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif; --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .l-fresh h1, .l-fresh h2, .l-fresh h3 { font-weight: 800; letter-spacing: -0.03em; }
+  .l-fresh .top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; max-width: 1280px; margin: 0 auto; }
+  .l-fresh .mark { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.3rem; text-decoration: none; color: var(--teal); letter-spacing: -0.03em; }
+  .l-fresh .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 0 4px var(--mint); }
+  .l-fresh .top nav { display: none; gap: 24px; }
+  .l-fresh .top nav a { text-decoration: none; font-weight: 600; color: var(--muted); }
+  .l-fresh .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 22px; border-radius: 14px; text-decoration: none; font-weight: 600; transition: transform 0.2s ease, background-color 0.2s ease; }
+  .l-fresh .btn:hover { transform: translateY(-2px); }
+  .l-fresh .btn.small { min-height: 42px; padding: 0 16px; font-size: 0.92rem; }
+  .l-fresh .btn-teal { background: var(--teal); color: #fff; }
+  .l-fresh .btn-teal:hover { background: var(--teal-2); }
+  .l-fresh .btn-soft { background: var(--mint); color: var(--teal); }
+  @media (max-width: 899px) { .l-fresh .top .btn { display: none; } }
+  @media (min-width: 900px) { .l-fresh .top nav { display: flex; } .l-fresh .top { padding: 22px 40px; } }
+
+  .l-fresh .hero { display: grid; gap: 36px; padding: 20px 20px 64px; max-width: 1280px; margin: 0 auto; align-items: center; }
+  .l-fresh .pill { display: inline-flex; gap: 6px; align-items: center; padding: 8px 14px; border-radius: 999px; background: var(--mint); color: var(--teal); font-weight: 600; font-size: 0.92rem; }
+  .l-fresh .pill svg { color: #d99a00; }
+  .l-fresh h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); line-height: 1.02; margin-top: 18px; }
+  .l-fresh .lead { margin-top: 18px; color: var(--muted); font-size: 1.12rem; max-width: 48ch; }
+  .l-fresh .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .l-fresh .hero-photos { position: relative; display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; }
+  .l-fresh .hero-photos img { width: 100%; height: 100%; object-fit: cover; border-radius: 22px; }
+  .l-fresh .p1 { grid-row: span 2; aspect-ratio: 9 / 11; }
+  .l-fresh .p2, .l-fresh .p3 { aspect-ratio: 1; }
+  .l-fresh .p3 { background: var(--sky); }
+  @media (min-width: 900px) { .l-fresh .hero { grid-template-columns: 1.05fr 1fr; gap: 64px; padding: 32px 40px 96px; } }
+
+  .l-fresh .trust { background: var(--teal); color: #fff; padding: 28px 20px; }
+  .l-fresh .trust ul { display: grid; gap: 16px; max-width: 1200px; margin: 0 auto; }
+  .l-fresh .trust li { display: flex; gap: 12px; align-items: center; color: #d9eef1; }
+  .l-fresh .trust strong { color: #fff; }
+  .l-fresh .trust svg { flex: none; color: var(--sun); }
+  @media (min-width: 900px) { .l-fresh .trust ul { grid-template-columns: repeat(3, 1fr); } .l-fresh .trust { padding: 32px 40px; } }
+
+  .l-fresh .included { padding: 88px 20px; max-width: 1200px; margin: 0 auto; }
+  .l-fresh .inc-head h2 { font-size: clamp(2rem, 4.8vw, 3.2rem); line-height: 1.05; max-width: 20ch; }
+  .l-fresh .inc-head p { color: var(--muted); margin-top: 12px; }
+  .l-fresh .rooms { display: grid; gap: 16px; margin-top: 36px; }
+  .l-fresh .room { background: var(--mint); border-radius: 22px; padding: 26px 22px; }
+  .l-fresh .room h3 { font-size: 1.3rem; color: var(--teal); margin-bottom: 14px; }
+  .l-fresh .room li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; }
+  .l-fresh .room li svg { flex: none; margin-top: 3px; color: var(--teal); }
+  @media (min-width: 900px) { .l-fresh .rooms { grid-template-columns: repeat(3, 1fr); gap: 20px; } .l-fresh .included { padding: 128px 40px; } .l-fresh .room { padding: 32px; } }
+
+  .l-fresh .reviews { background: var(--sky); padding: 88px 20px; }
+  .l-fresh .reviews h2, .l-fresh .reviews ul { max-width: 1200px; margin-left: auto; margin-right: auto; }
+  .l-fresh .reviews h2 { font-size: clamp(2rem, 4.8vw, 3.2rem); margin-bottom: 32px; }
+  .l-fresh .reviews ul { display: grid; gap: 16px; }
+  .l-fresh .reviews li { background: #fff; border-radius: 22px; padding: 26px; }
+  .l-fresh .reviews li p { margin: 12px 0; }
+  .l-fresh .stars { display: inline-flex; gap: 2px; color: #d99a00; }
+  .l-fresh .who { color: var(--muted); font-weight: 600; font-size: 0.92rem; }
+  @media (min-width: 900px) { .l-fresh .reviews ul { grid-template-columns: repeat(3, 1fr); gap: 20px; } .l-fresh .reviews { padding: 120px 40px; } }
+
+  .l-fresh .areas { display: grid; gap: 32px; max-width: 1200px; margin: 0 auto; padding: 88px 20px; }
+  .l-fresh .areas h2 { font-size: clamp(2rem, 4.8vw, 3.2rem); margin-bottom: 18px; }
+  .l-fresh .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .l-fresh .chips li { padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line-strong); font-weight: 600; font-size: 0.92rem; }
+  .l-fresh .addr { display: flex; gap: 10px; color: var(--muted); }
+  .l-fresh .addr svg { flex: none; margin-top: 3px; color: var(--teal); }
+  .l-fresh .hours-wrap { margin-top: 20px; }
+  .l-fresh .open-status { display: inline-block; padding: 6px 12px; border-radius: 999px; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; background: #f1f4f5; color: var(--muted); }
+  .l-fresh .open-status[data-state='open'] { background: var(--mint); color: var(--teal); }
+  .l-fresh .hours { width: 100%; border-collapse: collapse; }
+  .l-fresh .hours th, .l-fresh .hours td { text-align: left; padding: 9px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+  .l-fresh .hours td { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .l-fresh .hours tr[data-today] th, .l-fresh .hours tr[data-today] td { color: var(--teal); font-weight: 600; }
+  .l-fresh .map { border-radius: 22px; overflow: hidden; min-height: 340px; background: var(--mint); }
+  .l-fresh .map iframe { width: 100%; height: 100%; min-height: 340px; border: 0; }
+  @media (min-width: 900px) { .l-fresh .areas { grid-template-columns: 1fr 1.2fr; gap: 64px; padding: 128px 40px; } }
+
+  .l-fresh .foot { border-top: 1px solid var(--line); padding: 36px 20px; text-align: center; color: var(--muted); display: grid; gap: 6px; justify-items: center; }
+  .l-fresh .credit { font-size: 0.82rem; }
+</style>

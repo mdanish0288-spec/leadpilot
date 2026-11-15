@@ -1,0 +1,23 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.dev.vars
+
+# build output / deps
+node_modules/
+dist/
+.astro/
+.wrangler/
+.netlify/
+
+# test output
+test-results/
+playwright-report/
+screenshots/
+
+# OS
+.DS_Store
+Thumbs.db

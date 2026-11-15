@@ -1,0 +1,54 @@
+---
+import { unsplash } from '../lib/img';
+const layouts = [
+  { slug: 'ember', name: 'Ember', type: 'Cafe / coffee house', sample: 'Toronto, Canada', img: '1442512595331-e89e73853f31', idea: 'Dark espresso tones, big photo hero, menu board with dotted price lines.' },
+  { slug: 'masala', name: 'Masala', type: 'Indian / spice restaurant', sample: 'New Delhi, India', img: '1585937421612-70a008356fbe', idea: 'Deep red and saffron, arched dish photo, Order on Zomato / Swiggy per dish.' },
+  { slug: 'coat', name: 'Coat', type: 'Painter / decorator', sample: 'Vancouver, Canada', img: '1600585154340-be6161a56a0c', idea: 'Trust navy with a safety-yellow accent, colour swatches, before/after slider.' },
+  { slug: 'fresh', name: 'Fresh', type: 'Home cleaning', sample: 'Manchester, UK', img: '1584622650111-993a426fbf0a', idea: 'Crisp teal and mint, room-by-room checklist, areas covered.' },
+  { slug: 'atelier', name: 'Atelier', type: 'Luxury hair salon', sample: 'New York, USA', img: '1600948836101-f9ffda59d250', idea: 'Airy editorial serif, champagne hairlines, price list beside a tall portrait.' },
+  { slug: 'bloom', name: 'Bloom', type: 'Nail / beauty studio', sample: 'Mumbai, India', img: '1604654894610-df63bc536371', idea: 'Blush and deep plum, arched photo stack, menu with times and prices.' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>LeadPilot layout library</title>
+    <style>
+      body { margin: 0; font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; background: #fafafa; color: #18181b; }
+      main { max-width: 1200px; margin: 0 auto; padding: 40px 16px 80px; }
+      h1 { font-size: 2rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+      .intro { color: #52525b; margin: 0 0 32px; max-width: 60ch; }
+      ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+      a { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid #e4e4e7; border-radius: 16px; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
+      a:hover { transform: translateY(-3px); box-shadow: 0 16px 32px -20px rgba(0,0,0,.35); }
+      img { display: block; width: 100%; aspect-ratio: 16/10; object-fit: cover; }
+      .b { padding: 18px 20px 22px; }
+      h2 { margin: 0; font-size: 1.25rem; }
+      .t { color: #52525b; font-size: .92rem; margin: 2px 0 10px; }
+      .i { margin: 0; font-size: .95rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Layout library</h1>
+      <p class="intro">Six starting layouts. Every real demo starts from one of these, then gets the business's own colours, photos, reviews and wording, so no two demos look the same. Sample businesses and Unsplash photos are for preview only.</p>
+      <ul>
+        {layouts.map((l) => (
+          <li>
+            <a href={`/${l.slug}/`}>
+              <img src={unsplash(l.img, 800, 500)} width="800" height="500" alt="" loading="lazy" />
+              <div class="b">
+                <h2>{l.name}</h2>
+                <p class="t">{l.type}. Sample: {l.sample}</p>
+                <p class="i">{l.idea}</p>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </main>
+  </body>
+</html>

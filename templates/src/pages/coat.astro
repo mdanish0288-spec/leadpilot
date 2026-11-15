@@ -1,0 +1,263 @@
+---
+// Layout 3 — "Coat": painter / decorator. Trust navy + safety-yellow accent. Sample business, Vancouver (Canadian style).
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import Hours from '../components/Hours.astro';
+import ActionBar from '../components/ActionBar.astro';
+import { srcset, unsplash } from '../lib/img';
+import { telLink, waLink, mapEmbed, mapLink } from '../lib/types';
+
+const biz = {
+  name: 'Northline Painting Co.',
+  area: 'Kitsilano',
+  city: 'Vancouver',
+  address: '2150 W 4th Ave, Vancouver, BC V6K 1N6',
+  serviceArea: ['Kitsilano', 'Point Grey', 'Fairview', 'Mount Pleasant', 'Kerrisdale', 'Dunbar', 'West End', 'North Vancouver'],
+  phoneDisplay: '(604) 555-0178',
+  phoneIntl: '+16045550178',
+  rating: 4.9,
+  reviews: 187,
+  tz: 'America/Vancouver',
+  hours: { mon: ['07:30', '17:30'], tue: ['07:30', '17:30'], wed: ['07:30', '17:30'], thu: ['07:30', '17:30'], fri: ['07:30', '17:30'], sat: ['09:00', '14:00'] } as const,
+};
+// The swatch strip uses the business's own brand colours in real demos.
+const swatches = ['#12355b', '#5b7ea4', '#d9e2ec', '#f5b83d', '#f7f4ee'];
+const services = [
+  { title: 'Interior painting', text: 'Walls, ceilings, trim and doors. Furniture moved and covered, floors protected, rooms left tidy each evening.' },
+  { title: 'Exterior painting', text: 'Pressure washing, scraping, priming and two finish coats built for West Coast rain.' },
+  { title: 'Cabinet refinishing', text: 'Kitchen and bathroom cabinets sprayed for a smooth, factory-like finish.' },
+  { title: 'Decks and fences', text: 'Staining and sealing to protect cedar through wet winters.' },
+];
+const steps = [
+  { title: 'Walk-through', text: 'We visit, measure and talk colours with you.' },
+  { title: 'Written quote', text: 'A clear price and schedule, in writing.' },
+  { title: 'Prep and paint', text: 'Surfaces repaired, protected and painted.' },
+  { title: 'Final check', text: 'We walk the job with you before we leave.' },
+];
+const reviews = [
+  { text: 'They painted our whole main floor in three days. Clean lines, no mess, and they showed up on time every single morning.', name: 'Jenna T.' },
+  { text: 'Honest quote and no surprises. The exterior still looks brand new after a full rainy season.', name: 'David C.' },
+  { text: 'Helped us pick colours when we were stuck. The kitchen cabinets look like we bought new ones.', name: 'Aisha M.' },
+];
+const wa = waLink(biz.phoneIntl, `Hi ${biz.name}, I'd like a quote for a painting job.`);
+---
+<Base
+  title={`${biz.name} — house painters in ${biz.city}`}
+  description={`Interior and exterior painting across ${biz.city}'s West Side. Rated ${biz.rating} from ${biz.reviews} Google reviews.`}
+  fonts="family=Archivo:wdth,wght@100..125,500..800&family=Inter:wght@400;600"
+  themeColor="#12355b"
+  bodyClass="l-coat"
+  demo={{ business: biz.name, agency: '[Your Business Name]', note: 'Layout preview — sample business and sample photos' }}
+>
+  <header class="top">
+    <a class="mark" href="#main"><span class="chip" aria-hidden="true"></span>Northline</a>
+    <a class="btn btn-yellow small" href={telLink(biz.phoneIntl)}><Icon name="phone" size={16} />{biz.phoneDisplay}</a>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="trust" data-hero><Icon name="shield" size={18} />Licensed and insured in British Columbia</p>
+        <h1 data-hero>House painters for Vancouver’s West Side</h1>
+        <p class="lead" data-hero>Interior, exterior and cabinet painting in {biz.area} and nearby neighbourhoods. Careful prep, clean lines, on schedule.</p>
+        <div class="hero-cta" data-hero>
+          <a class="btn btn-yellow" href={telLink(biz.phoneIntl)}><Icon name="phone" size={18} />Call for a quote</a>
+          <a class="btn btn-outline" href={wa} target="_blank" rel="noopener"><Icon name="chat" size={18} />WhatsApp photos</a>
+        </div>
+        <p class="rating" data-hero>
+          <span class="stars" aria-hidden="true">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={16} />)}</span>
+          <strong>{biz.rating}</strong>&nbsp;from {biz.reviews} Google reviews
+        </p>
+      </div>
+      <figure class="hero-img" data-hero>
+        <img src={unsplash('1600585154340-be6161a56a0c', 1400, 1100)} srcset={srcset('1600585154340-be6161a56a0c', 0.786, [600, 1000, 1400])} sizes="(min-width: 900px) 50vw, 100vw" width="1400" height="1100" alt="Freshly painted modern house exterior at dusk" fetchpriority="high" />
+        <div class="swatches" aria-hidden="true">{swatches.map((c) => <span style={`background:${c}`}></span>)}</div>
+      </figure>
+    </section>
+
+    <section class="services">
+      <h2 data-reveal>What we paint</h2>
+      <ul>
+        {services.map((s) => (
+          <li data-reveal><h3>{s.title}</h3><p>{s.text}</p></li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="ba">
+      <div class="ba-copy" data-reveal>
+        <h2>Drag to see the difference</h2>
+        <p>A living room refresh: patched walls, a fresh ceiling white and a soft grey feature wall.</p>
+      </div>
+      <div class="ba-frame" data-reveal data-ba style="--pos: 50%">
+        <img src={unsplash('1600607687939-ce8a6c25118c', 1400, 900)} width="1400" height="900" alt="Living room after painting" loading="lazy" />
+        <img class="before" src={unsplash('1600607687939-ce8a6c25118c', 1400, 900)} width="1400" height="900" alt="The same living room before painting" loading="lazy" />
+        <span class="tag tag-before">Before</span><span class="tag tag-after">After</span>
+        <span class="handle" aria-hidden="true"></span>
+        <label class="sr-only" for="ba-range">Before and after comparison</label>
+        <input id="ba-range" type="range" min="0" max="100" value="50" />
+      </div>
+    </section>
+
+    <section class="steps">
+      <h2 data-reveal>How a job works</h2>
+      <ol>
+        {steps.map((s, i) => (
+          <li data-reveal><span class="n">{i + 1}</span><h3>{s.title}</h3><p>{s.text}</p></li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="reviews">
+      <h2 data-reveal>Homeowners say</h2>
+      <ul>
+        {reviews.map((r) => (
+          <li data-reveal>
+            <span class="stars" aria-label="5 out of 5 stars">{[1, 2, 3, 4, 5].map(() => <Icon name="star" size={14} />)}</span>
+            <p>“{r.text}”</p>
+            <span class="who">{r.name}, Google review</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="area">
+      <div data-reveal>
+        <h2>Where we work</h2>
+        <ul class="chips">{biz.serviceArea.map((a) => <li>{a}</li>)}</ul>
+        <p class="addr"><Icon name="pin" size={18} />{biz.address}</p>
+        <Hours hours={biz.hours} tz={biz.tz} style="ca" class="hours-wrap" />
+      </div>
+      <div class="map" data-reveal>
+        <iframe title={`Map showing ${biz.name}`} src={mapEmbed(`${biz.name}, ${biz.address}`)} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+      </div>
+    </section>
+
+    <section class="cta" data-reveal><div class="inner">
+      <h2>Planning a paint job?</h2>
+      <p>Send a few photos on WhatsApp or give us a call. We’ll book a walk-through at a time that suits you.</p>
+      <div class="hero-cta">
+        <a class="btn btn-yellow" href={telLink(biz.phoneIntl)}><Icon name="phone" size={18} />{biz.phoneDisplay}</a>
+        <a class="btn btn-outline light" href={wa} target="_blank" rel="noopener"><Icon name="chat" size={18} />WhatsApp</a>
+      </div>
+    </div></section>
+  </main>
+
+  <footer class="foot">
+    <p>{biz.name} · {biz.address}</p>
+    <p class="credit">Sample photos: Unsplash</p>
+  </footer>
+
+  <ActionBar
+    secondary={[{ label: 'WhatsApp', href: wa, icon: 'chat' }]}
+    primary={{ label: 'Call for a quote', href: telLink(biz.phoneIntl), icon: 'phone' }}
+  />
+</Base>
+
+<script>
+  // Before/after slider — works with mouse, touch and keyboard (native range input).
+  document.querySelectorAll<HTMLElement>('[data-ba]').forEach((frame) => {
+    const input = frame.querySelector('input')!;
+    const set = () => frame.style.setProperty('--pos', `${input.value}%`);
+    input.addEventListener('input', set);
+  });
+</script>
+
+<style is:global>
+  .l-coat {
+    --bg: #ffffff; --fg: #0f2236; --muted: #4a5d72; --navy: #12355b; --steel: #eef2f6; --yellow: #f5b83d; --accent: #f5b83d; --on-accent: #0f2236;
+    --line: #dde4ec; --line-strong: #b7c4d3; --focus: #12355b; --bar-bg: #ffffff; --bar-radius: 8px;
+    --font-display: 'Archivo', system-ui, sans-serif; --font-body: 'Inter', system-ui, sans-serif;
+  }
+  .l-coat h1, .l-coat h2, .l-coat h3, .l-coat .mark { font-family: var(--font-display); font-stretch: 112%; font-weight: 750; letter-spacing: -0.02em; }
+  .l-coat .top { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; max-width: 1280px; margin: 0 auto; }
+  .l-coat .mark { display: inline-flex; align-items: center; gap: 10px; font-size: 1.35rem; text-decoration: none; color: var(--navy); }
+  .l-coat .chip { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, var(--navy) 50%, var(--yellow) 50%); }
+  .l-coat .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 22px; border-radius: 8px; text-decoration: none; font-weight: 600; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .l-coat .btn:hover { transform: translateY(-2px); }
+  .l-coat .btn.small { min-height: 42px; padding: 0 14px; font-size: 0.92rem; }
+  .l-coat .btn-yellow { background: var(--yellow); color: var(--fg); box-shadow: 0 2px 0 #c98f1b; }
+  .l-coat .btn-outline { border: 1.5px solid var(--navy); color: var(--navy); }
+  .l-coat .btn-outline.light { border-color: rgba(255, 255, 255, 0.6); color: #fff; }
+  @media (max-width: 899px) { .l-coat .top .btn { display: none; } }
+
+  .l-coat .hero { display: grid; gap: 32px; padding: 24px 20px 72px; max-width: 1280px; margin: 0 auto; align-items: center; }
+  .l-coat .trust { display: inline-flex; gap: 8px; align-items: center; font-weight: 600; color: var(--navy); background: var(--steel); padding: 8px 12px; border-radius: 6px; font-size: 0.92rem; }
+  .l-coat h1 { font-size: clamp(2.5rem, 6.6vw, 5.2rem); line-height: 0.98; margin-top: 18px; color: var(--navy); }
+  .l-coat .lead { margin-top: 18px; color: var(--muted); font-size: 1.12rem; max-width: 46ch; }
+  .l-coat .hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .l-coat .rating { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 22px; color: var(--muted); }
+  .l-coat .rating strong { color: var(--fg); }
+  .l-coat .stars { display: inline-flex; gap: 2px; color: #e2a21f; }
+  .l-coat .hero-img { position: relative; }
+  .l-coat .hero-img img { width: 100%; aspect-ratio: 14 / 11; object-fit: cover; border-radius: 12px; }
+  .l-coat .swatches { position: absolute; left: 16px; bottom: -18px; display: flex; box-shadow: 0 12px 30px -12px rgba(15, 34, 54, 0.5); border-radius: 8px; overflow: hidden; }
+  .l-coat .swatches span { width: 44px; height: 56px; }
+  @media (min-width: 900px) { .l-coat .hero { grid-template-columns: 1fr 1.05fr; gap: 64px; padding: 40px 40px 120px; } .l-coat .swatches span { width: 64px; height: 84px; } .l-coat .swatches { left: -28px; bottom: -28px; } }
+
+  .l-coat .services { background: var(--navy); color: #fff; padding: 88px 20px; }
+  .l-coat .services h2, .l-coat .services ul { max-width: 1200px; margin-left: auto; margin-right: auto; }
+  .l-coat .services h2 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 36px; }
+  .l-coat .services ul { display: grid; gap: 1px; background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 12px; overflow: hidden; }
+  .l-coat .services li { background: var(--navy); padding: 28px 24px; }
+  .l-coat .services h3 { font-size: 1.3rem; margin-bottom: 8px; }
+  .l-coat .services p { color: #c7d4e3; }
+  @media (min-width: 900px) { .l-coat .services ul { grid-template-columns: 1fr 1fr; } .l-coat .services { padding: 128px 40px; } .l-coat .services li { padding: 40px; } }
+
+  .l-coat .ba { display: grid; gap: 28px; padding: 88px 20px; max-width: 1200px; margin: 0 auto; align-items: center; }
+  .l-coat .ba h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--navy); margin-bottom: 12px; }
+  .l-coat .ba p { color: var(--muted); max-width: 44ch; }
+  .l-coat .ba-frame { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 14 / 9; touch-action: pan-y; }
+  .l-coat .ba-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* Sample only: real demos use the business's real before/after photos, or omit this section. */
+  .l-coat .ba-frame .before { filter: grayscale(0.85) brightness(0.78) contrast(0.9) sepia(0.25); clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+  .l-coat .handle { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 3px; background: #fff; transform: translateX(-50%); pointer-events: none; }
+  .l-coat .handle::after { content: ''; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; border-radius: 50%; background: #fff; transform: translate(-50%, -50%); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); }
+  .l-coat .ba-frame input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0; }
+  .l-coat .tag { position: absolute; top: 14px; padding: 6px 10px; border-radius: 6px; background: rgba(15, 34, 54, 0.8); color: #fff; font-size: 0.85rem; font-weight: 600; pointer-events: none; }
+  .l-coat .tag-before { left: 14px; } .l-coat .tag-after { right: 14px; }
+  @media (min-width: 900px) { .l-coat .ba { grid-template-columns: 1fr 1.6fr; gap: 64px; padding: 128px 40px; } }
+
+  .l-coat .steps { background: var(--steel); padding: 88px 20px; }
+  .l-coat .steps h2, .l-coat .steps ol { max-width: 1200px; margin-left: auto; margin-right: auto; }
+  .l-coat .steps h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--navy); margin-bottom: 32px; }
+  .l-coat .steps ol { list-style: none; padding: 0; display: grid; gap: 24px; }
+  .l-coat .steps .n { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--navy); color: #fff; font-weight: 700; margin-bottom: 12px; }
+  .l-coat .steps h3 { font-size: 1.2rem; color: var(--navy); margin-bottom: 4px; }
+  .l-coat .steps p { color: var(--muted); }
+  @media (min-width: 900px) { .l-coat .steps ol { grid-template-columns: repeat(4, 1fr); gap: 40px; } .l-coat .steps { padding: 120px 40px; } }
+
+  .l-coat .reviews { max-width: 1200px; margin: 0 auto; padding: 88px 20px; }
+  .l-coat .reviews h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--navy); margin-bottom: 32px; }
+  .l-coat .reviews ul { display: grid; gap: 20px; }
+  .l-coat .reviews li { border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+  .l-coat .reviews li p { margin: 12px 0; }
+  .l-coat .who { color: var(--muted); font-size: 0.92rem; font-weight: 600; }
+  @media (min-width: 900px) { .l-coat .reviews ul { grid-template-columns: repeat(3, 1fr); } .l-coat .reviews { padding: 128px 40px; } }
+
+  .l-coat .area { display: grid; gap: 32px; max-width: 1200px; margin: 0 auto; padding: 0 20px 88px; }
+  .l-coat .area h2 { font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--navy); margin-bottom: 18px; }
+  .l-coat .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .l-coat .chips li { padding: 8px 14px; border-radius: 999px; background: var(--steel); color: var(--navy); font-weight: 600; font-size: 0.92rem; }
+  .l-coat .addr { display: flex; gap: 10px; color: var(--muted); }
+  .l-coat .addr svg { flex: none; margin-top: 3px; color: var(--navy); }
+  .l-coat .hours-wrap { margin-top: 20px; }
+  .l-coat .open-status { display: inline-block; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; background: var(--steel); color: var(--muted); }
+  .l-coat .open-status[data-state='open'] { background: #e3f3e8; color: #17663a; }
+  .l-coat .hours { width: 100%; border-collapse: collapse; }
+  .l-coat .hours th, .l-coat .hours td { text-align: left; padding: 9px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+  .l-coat .hours td { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .l-coat .hours tr[data-today] th, .l-coat .hours tr[data-today] td { color: var(--navy); font-weight: 700; }
+  .l-coat .map { border-radius: 12px; overflow: hidden; min-height: 340px; background: var(--steel); }
+  .l-coat .map iframe { width: 100%; height: 100%; min-height: 340px; border: 0; }
+  @media (min-width: 900px) { .l-coat .area { grid-template-columns: 1fr 1.2fr; gap: 64px; padding: 0 40px 128px; } }
+
+  .l-coat .cta { background: var(--navy); color: #fff; padding: 80px 20px; text-align: left; }
+  .l-coat .cta .inner { max-width: 1200px; margin: 0 auto; }
+  .l-coat .cta h2 { font-size: clamp(2rem, 5vw, 3.6rem); }
+  .l-coat .cta p { color: #c7d4e3; margin-top: 12px; max-width: 52ch; }
+  @media (min-width: 900px) { .l-coat .cta { padding: 120px 40px; } }
+
+  .l-coat .foot { padding: 32px 20px; text-align: center; color: var(--muted); font-size: 0.92rem; display: grid; gap: 4px; }
+  .l-coat .credit { font-size: 0.82rem; }
+</style>

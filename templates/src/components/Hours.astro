@@ -1,0 +1,20 @@
+---
+import { DAYS, DAY_LABELS, fmtTime, type Hours, type TimeStyle } from '../lib/types';
+interface Props { hours: Hours; tz: string; style: TimeStyle; class?: string }
+const { hours, tz, style, class: cls } = Astro.props;
+const dash = style === 'uk' ? '–' : ' – ';
+---
+<div class={cls}>
+  <p class="open-status" data-open-status data-tz={tz} data-hours={JSON.stringify(hours)} hidden></p>
+  <table class="hours">
+    <caption class="sr-only">Opening hours</caption>
+    <tbody>
+      {DAYS.map((d) => (
+        <tr data-day={d}>
+          <th scope="row">{DAY_LABELS[d]}</th>
+          <td>{hours[d] ? `${fmtTime(hours[d]![0], style)}${dash}${fmtTime(hours[d]![1], style)}` : 'Closed'}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>

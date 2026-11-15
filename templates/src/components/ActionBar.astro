@@ -1,0 +1,17 @@
+---
+import Icon from './Icon.astro';
+interface Action { label: string; href: string; icon: 'phone' | 'chat' | 'bag' | 'calendar' | 'pin' }
+interface Props { primary: Action; secondary: Action[] }
+const { primary, secondary } = Astro.props;
+const ext = (h: string) => h.startsWith('http');
+---
+<nav class="action-bar" aria-label="Quick contact">
+  {secondary.map((a) => (
+    <a class="secondary" href={a.href} target={ext(a.href) ? '_blank' : undefined} rel={ext(a.href) ? 'noopener' : undefined}>
+      <Icon name={a.icon} size={18} />{a.label}
+    </a>
+  ))}
+  <a class="primary" href={primary.href} target={ext(primary.href) ? '_blank' : undefined} rel={ext(primary.href) ? 'noopener' : undefined}>
+    <Icon name={primary.icon} size={18} />{primary.label}
+  </a>
+</nav>
