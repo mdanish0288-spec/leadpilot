@@ -1,7 +1,7 @@
 // Understands commands like "Go to Canada and find restaurants in Toronto" or "Toronto mein cafe dhundo".
-// Uses the official Anthropic SDK with structured outputs, so the answer always has the same shape.
-import Anthropic from '@anthropic-ai/sdk';
-import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
+// Uses Google's official Gemini SDK with a JSON schema, so the answer always has the same shape,
+// and the answer is checked again against the same schema before it is used.
+import { ApiError, GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import { HttpError } from './http';
 
@@ -27,30 +27,64 @@ Extract three things: business type, city, country.
 - Fix obvious speech-to-text slips (e.g. "Tokyo mein content cafe" most likely means "cafe"; keep the owner's words when unsure and mention it in the question).
 - Never invent a city or business type the owner did not say.`;
 
-export async function parseCommand(apiKey: string, text: string): Promise<ParsedCommand> {
-  const client = new Anthropic({ apiKey, maxRetries: 1, timeout: 30_000 });
-  let response;
-  try {
-    response = await client.beta.messages.parse({
-      model: 'claude-opus-5-5',
-      max_tokens: 4000,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      output_config: { effort: 'low', format: betaZodOutputFormat(CommandSchema) },
-      system: SYSTEM,
-      messages: [{ role: 'user', content: text }],
-    });
-  } catch (e) {
-    if (e instanceof Anthropic.AuthenticationError) throw new HttpError(502, 'The Claude API key is not valid. Update it in Cloudflare.', 'claude_auth');
-    if (e instanceof Anthropic.RateLimitError) throw new HttpError(429, 'Claude is busy right now. Try again in a minute.', 'claude_busy');
-    if (e instanceof Anthropic.APIConnectionError || e instanceof Anthropic.InternalServerError) throw new HttpError(502, 'Could not reach Claude. Try again in a minute.', 'claude_unreachable');
-    if (e instanceof Anthropic.APIError) throw new HttpError(502, `Claude returned an error (${e.status}).`, 'claude_error');
-    throw e;
+export const GEMINI_MODEL = 'gemini-3.5-flash-lite'; // stable model (not preview)
+/**
+ * Gemini supports only part of JSON Schema (its documented list includes type, enum, anyOf, properties, required…).
+ * Drop the `$schema` header and write "string or null" as anyOf instead of a type array.
+ */
+export function toGeminiSchema(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(toGeminiSchema);
+  if (!node || typeof node !== 'object') return node;
+  const { $schema: _drop, ...rest } = node as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rest)) out[k] = toGeminiSchema(v);
+  if (Array.isArray(out.type)) {
+    const { type, ...others } = out;
+    return { ...others, anyOf: (type as string[]).map((t) => ({ type: t })) };
   }
-  if (response.stop_reason === 'refusal' || !response.parsed_output) {
+  return out;
+}
+const RESPONSE_SCHEMA = toGeminiSchema(z.toJSONSchema(CommandSchema));
+
+export async function parseCommand(apiKey: string, text: string): Promise<ParsedCommand> {
+  const ai = new GoogleGenAI({ apiKey });
+  let raw: string | undefined;
+  try {
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: text,
+      config: {
+        systemInstruction: SYSTEM,
+        responseMimeType: 'application/json',
+        responseJsonSchema: RESPONSE_SCHEMA,
+        temperature: 0,
+        abortSignal: AbortSignal.timeout(30_000),
+      },
+    });
+    raw = response.text;
+  } catch (e) {
+    if (e instanceof ApiError) {
+      if (e.status === 400 && /api key/i.test(e.message)) throw new HttpError(502, 'The Gemini API key is not valid. Update GEMINI_API_KEY in Cloudflare.', 'ai_auth');
+      if (e.status === 401 || e.status === 403) throw new HttpError(502, 'The Gemini API key was refused. Check it in Google AI Studio.', 'ai_auth');
+      if (e.status === 429) throw new HttpError(429, 'Gemini is busy or the free limit was reached. Try again in a minute.', 'ai_busy');
+      throw new HttpError(502, `Gemini returned an error (${e.status}).`, 'ai_error');
+    }
+    throw new HttpError(502, 'Could not reach Gemini. Try again in a minute.', 'ai_unreachable');
+  }
+  return parseModelJson(raw);
+}
+
+/** The model's text must be valid JSON matching the schema — otherwise nothing runs. */
+export function parseModelJson(raw: string | undefined): ParsedCommand {
+  let data: unknown;
+  try {
+    data = JSON.parse(raw ?? '');
+  } catch {
     throw new HttpError(422, 'LeadPilot could not understand that command. Try: "Find painters in Vancouver".', 'not_understood');
   }
-  return normaliseCommand(response.parsed_output);
+  const parsed = CommandSchema.safeParse(data);
+  if (!parsed.success) throw new HttpError(422, 'LeadPilot could not understand that command. Try: "Find painters in Vancouver".', 'not_understood');
+  return normaliseCommand(parsed.data);
 }
 
 /** Server-side safety net on top of the schema: tidy values, and never "ready" with a missing piece. */

@@ -3,7 +3,8 @@ import { computeScore, parsePriceLevel, ratingPoints, reviewPoints, tierFromScor
 import { analyseHomepage, classifyListingWebsite, isFetchableUrl, leadTypeFor, normaliseInstagram } from './website';
 import { placesToLeads, type Place } from './places';
 import { SHEET_COLUMNS, firstRowOfRange, leadToRow, type SheetLead } from './sheet';
-import { buildPlacesQuery, normaliseCommand } from './command';
+import { buildPlacesQuery, CommandSchema, normaliseCommand, parseModelJson, toGeminiSchema } from './command';
+import { z } from 'zod';
 import { Db, HttpError, requireOwner } from './http';
 
 describe('business score', () => {
@@ -183,6 +184,30 @@ describe('command understanding safety net', () => {
   it('rejects a broken country code', () => {
     const c = normaliseCommand({ status: 'ready', business_type: 'cafes', city: 'Tokyo', country: 'Japan', country_code: 'Japan', language: 'english', question: null, summary: '' });
     expect(c.status).toBe('needs_info');
+  });
+});
+
+describe('Gemini reply checking', () => {
+  const good = { status: 'ready', business_type: 'cafes', city: 'Tokyo', country: 'Japan', country_code: 'JP', language: 'hinglish', question: null, summary: 'Cafes in Tokyo, Japan' };
+  it('accepts a valid JSON reply', () => {
+    expect(parseModelJson(JSON.stringify(good)).city).toBe('Tokyo');
+  });
+  it('refuses a reply that is not JSON', () => {
+    expect(() => parseModelJson('Sure! Here are cafes in Tokyo')).toThrow(/could not understand/);
+    expect(() => parseModelJson(undefined)).toThrow(/could not understand/);
+  });
+  it('refuses JSON with the wrong shape', () => {
+    expect(() => parseModelJson(JSON.stringify({ ...good, status: 'go' }))).toThrow(/could not understand/);
+    expect(() => parseModelJson(JSON.stringify({ city: 'Tokyo' }))).toThrow(/could not understand/);
+  });
+  it('sends Gemini only the schema features it supports', () => {
+    const schema = JSON.stringify(toGeminiSchema(z.toJSONSchema(CommandSchema)));
+    expect(schema).not.toContain('$schema');
+    expect(schema).not.toMatch(/"type":\[/);
+    expect(schema).toContain('"anyOf":[{"type":"string"},{"type":"null"}]');
+  });
+  it('still forces a question when the city is missing', () => {
+    expect(parseModelJson(JSON.stringify({ ...good, city: null })).status).toBe('needs_info');
   });
 });
 

@@ -111,10 +111,10 @@ describe('search flow', () => {
     expect(res.status).toBe(400);
   });
 
-  it('says clearly when the Claude key is not set up', async () => {
+  it('says clearly when the Gemini key is not set up', async () => {
     fakeServices();
     const res = await run(command, req('/api/command', { text: 'find cafes in Tokyo' }), {});
     expect(res.status).toBe(503);
-    expect(((await res.json()) as { error: string }).error).toMatch(/Claude/);
+    expect(((await res.json()) as { error: string }).error).toMatch(/Gemini/);
   });
 });

@@ -53,7 +53,7 @@ export function HostingPage() {
     { icon: <Server size={18} />, what: 'LeadPilot server (search, checks, sheet)', where: 'Cloudflare Pages Functions', cost: 'Free up to 100,000 requests/day', status: 'Live', tone: 'live', usage: n('website_check', 'website check'), note: 'Fully automatic background jobs arrive in Phase 4–5' },
   ];
   const services: Row[] = [
-    { icon: <Bot size={18} />, what: 'AI brain', where: 'Claude API (Claude Opus 5.5)', cost: '≈ 1 US cent per command', ...key(status?.claude), usage: n('command', 'command') },
+    { icon: <Bot size={18} />, what: 'AI brain', where: 'Google Gemini API (Gemini 3.5 Flash-Lite)', cost: 'Free tier, or a fraction of a cent per command on paid', ...key(status?.ai), usage: n('command', 'command'), note: 'Use a billing-enabled key so Google does not use client data to improve its products' },
     { icon: <MapPinned size={18} />, what: 'Business search', where: 'Google Places API', cost: 'Monthly free allowance, then pay per use', ...key(status?.places), usage: n('search', 'search', 'searches'), note: 'Set a $10 budget alert in Google Cloud Billing' },
     { icon: <Mic size={18} />, what: 'Voice to text', where: 'ElevenLabs Scribe', cost: 'Pay per minute of audio', ...key(status?.voice), usage: n('transcribe', 'voice clip') },
     { icon: <FileSpreadsheet size={18} />, what: 'Lead sheet', where: 'Google Sheets “LeadPilot Leads”', cost: 'Free', ...sheetStatus, note: sheetOk ? undefined : 'Add the key in Cloudflare, then the link in Settings' },

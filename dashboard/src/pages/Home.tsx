@@ -87,7 +87,7 @@ export function HomePage() {
     setViaVoice(false);
   }
 
-  const missing = status ? [!status.claude && 'Claude API key', !status.places && 'Google Places key', !status.voice && 'ElevenLabs key (voice)', !(status.sheet_key && status.sheet_link) && 'Google Sheet'].filter(Boolean) : [];
+  const missing = status ? [!status.ai && 'Gemini API key', !status.places && 'Google Places key', !status.voice && 'ElevenLabs key (voice)', !(status.sheet_key && status.sheet_link) && 'Google Sheet'].filter(Boolean) : [];
   const busy = phase.kind === 'thinking' || phase.kind === 'searching';
 
   const STATS = [
@@ -109,7 +109,7 @@ export function HomePage() {
       {missing.length > 0 && (
         <div className="mb-4"><Notice tone="warn">
           Not connected yet: {missing.join(', ')}.{' '}
-          {status && (!status.claude || !status.places) ? 'Search starts working once the Claude and Google Places keys are added.' : 'Search still works; this part switches on once it is connected.'}
+          {status && (!status.ai || !status.places) ? 'Search starts working once the Gemini and Google Places keys are added.' : 'Search still works; this part switches on once it is connected.'}
         </Notice></div>
       )}
 

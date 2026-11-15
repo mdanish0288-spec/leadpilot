@@ -20,7 +20,7 @@ LeadPilot is a private system that:
 | Background jobs (lead finding, inbox checks, replies, scheduling) | Cloudflare Workers + Cron Triggers |
 | Database, login (2FA), file storage | ONE Supabase project (free plan), Row Level Security on every table |
 | Business email | `hello@[domain]` via Cloudflare Email Routing → owner's Gmail |
-| AI brain | Claude API |
+| AI brain | Google Gemini API (`gemini-3.5-flash-lite`, stable) — owner's choice 16 Nov 2026, replaced Claude API |
 | Voice input | ElevenLabs Scribe (English, Hindi, Hinglish) |
 | Leads | Google Places API (never scraping) |
 | Sheet | Google Sheets API |
@@ -45,10 +45,10 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 
 ## Server (Phase 2)
 - `dashboard/functions/api/*.ts` = Cloudflare Pages Functions (deploy automatically with the dashboard). Shared logic in `dashboard/server/` with tests (`npm test`).
-- Endpoints: `status`, `command` (Claude `claude-opus-5-5`, structured output, server-side fallbacks on), `transcribe` (ElevenLabs `scribe_v2`), `search` (Google Places Text Search New, 20 per page, max 60), `check-websites` (4 per call), `sync-sheet`.
+- Endpoints: `status`, `command` (Gemini `gemini-3.5-flash-lite` via `@google/genai`, JSON schema output, re-validated with zod), `transcribe` (ElevenLabs `scribe_v2`), `search` (Google Places Text Search New, 20 per page, max 60), `check-websites` (4 per call), `sync-sheet`.
 - Every endpoint first calls `public.use_quota` = owner + 2FA check + hourly rate limit. Server talks to Supabase with the OWNER's JWT so RLS always applies (no service-role key needed yet).
 - Cloudflare free plan: 10 ms CPU and 50 outbound requests per call — keep batches small. Never store `fetch` as an object property (Workers "Illegal invocation"); wrap it in an arrow.
-- Secrets (Cloudflare Pages → Settings → Variables and Secrets, type Secret): `ANTHROPIC_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`.
+- Secrets (Cloudflare Pages → Settings → Variables and Secrets, type Secret): `GEMINI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`.
 - Website checks run while the dashboard is open (resumed on next open). A Worker cron for fully unattended jobs comes with Phase 4/5.
 
 ## Security model (Phase 1)
@@ -106,3 +106,6 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - Other countries (USD): Standard $350 / $300; Premium $600 / $500; Luxury $1,000 / $850.
 - Prices include the first-year domain. Domain over $20/year → alert owner before quoting.
 - Launch offer: real discount (default 10%) for the first 10 deals per city; counted and stopped automatically.
+
+## Privacy note (AI)
+- Use a Gemini key from a billing-enabled Google project: on Gemini's free tier Google may use prompts to improve its products, and later phases send client messages to the AI.

@@ -1,7 +1,8 @@
 // Secrets live ONLY in Cloudflare Pages → Settings → Variables and Secrets (encrypted).
 // They are never in code or GitHub.
 export interface Env {
-  ANTHROPIC_API_KEY?: string;
+  /** Google Gemini API key (Google AI Studio). */
+  GEMINI_API_KEY?: string;
   GOOGLE_PLACES_API_KEY?: string;
   ELEVENLABS_API_KEY?: string;
   /** Full JSON key of the Google service account that edits the "LeadPilot Leads" sheet. */

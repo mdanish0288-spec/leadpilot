@@ -10,7 +10,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     if (!settings) throw new HttpError(403, 'Only the owner, signed in with 2FA, can do this.', 'not_owner');
     const sa = parseServiceAccount(env.GOOGLE_SERVICE_ACCOUNT_JSON);
     return json({
-      claude: !!env.ANTHROPIC_API_KEY,
+      ai: !!env.GEMINI_API_KEY,
       places: !!env.GOOGLE_PLACES_API_KEY,
       voice: !!env.ELEVENLABS_API_KEY,
       sheet_key: !!sa,
