@@ -45,7 +45,7 @@ export function HostingPage() {
     : sheetOk ? { status: 'Connected', tone: 'live' }
     : { status: !status.sheet_key ? 'Key missing' : 'Link missing', tone: 'setup' };
 
-  const n = (k: keyof NonNullable<typeof usage>, word: string) => (usage ? `${usage[k]} ${word}${usage[k] === 1 ? '' : 's'} this month` : undefined);
+  const n = (k: keyof NonNullable<typeof usage>, one: string, many = `${one}s`) => (usage ? `${usage[k]} ${usage[k] === 1 ? one : many} this month` : undefined);
 
   const running: Row[] = [
     { icon: <LayoutDashboard size={18} />, what: 'This dashboard', where: 'Cloudflare Pages', cost: 'Free', status: 'Live', tone: 'live', note: 'leadpilot-app.pages.dev · updates itself on every change' },
@@ -54,7 +54,7 @@ export function HostingPage() {
   ];
   const services: Row[] = [
     { icon: <Bot size={18} />, what: 'AI brain', where: 'Claude API (Claude Opus 5.5)', cost: '≈ 1 US cent per command', ...key(status?.claude), usage: n('command', 'command') },
-    { icon: <MapPinned size={18} />, what: 'Business search', where: 'Google Places API', cost: 'Monthly free allowance, then pay per use', ...key(status?.places), usage: n('search', 'search'), note: 'Set a $10 budget alert in Google Cloud Billing' },
+    { icon: <MapPinned size={18} />, what: 'Business search', where: 'Google Places API', cost: 'Monthly free allowance, then pay per use', ...key(status?.places), usage: n('search', 'search', 'searches'), note: 'Set a $10 budget alert in Google Cloud Billing' },
     { icon: <Mic size={18} />, what: 'Voice to text', where: 'ElevenLabs Scribe', cost: 'Pay per minute of audio', ...key(status?.voice), usage: n('transcribe', 'voice clip') },
     { icon: <FileSpreadsheet size={18} />, what: 'Lead sheet', where: 'Google Sheets “LeadPilot Leads”', cost: 'Free', ...sheetStatus, note: sheetOk ? undefined : 'Add the key in Cloudflare, then the link in Settings' },
   ];
