@@ -142,3 +142,18 @@ const PREVIEW_LEADS: Lead[] = [
   { id: 'p2', created_at: '2026-11-16T09:00:00Z', name: 'Sample: Sakura Bakery Cafe', business_type: 'cafes', full_address: '4-5 Nakameguro, Meguro City, Tokyo', neighbourhood: 'Nakameguro', city: 'Tokyo', country: 'Japan', country_code: 'JP', phone: '03-1111-1111', phone_intl: null, email: 'hello@example.jp', instagram: null, rating: 4.3, review_count: 95, price_level: null, opening_hours: null, maps_url: 'https://maps.google.com', website: 'http://sakura-sample.jp', website_status: 'weak', website_issues: ['No HTTPS (shows "Not secure" in browsers)', 'Not built for phones (no mobile viewport)', 'Copyright year 2017 — looks unmaintained'], lead_type: 'warm', score: 52, score_reasons: sampleReasons(52), pricing_tier: 'premium', stage: 'New', photo_count: 6, top_reviews: [], sheet_row: 3, notes: null },
   { id: 'p3', created_at: '2026-11-16T09:00:00Z', name: 'Sample: Modern Roasters', business_type: 'cafes', full_address: 'Shinjuku City, Tokyo', neighbourhood: null, city: 'Tokyo', country: 'Japan', country_code: 'JP', phone: null, phone_intl: null, email: null, instagram: null, rating: 4.1, review_count: 40, price_level: 'MODERATE', opening_hours: null, maps_url: null, website: 'https://modern-sample.jp', website_status: 'good', website_issues: [], lead_type: 'skip', score: 38, score_reasons: sampleReasons(38), pricing_tier: 'standard', stage: 'New', photo_count: 3, top_reviews: [], sheet_row: 4, notes: null },
 ];
+
+/** How many paid calls were made since the 1st of this month (for the Hosting page). */
+export async function usageThisMonth(): Promise<Record<'command' | 'search' | 'transcribe' | 'website_check', number>> {
+  const empty = { command: 0, search: 0, transcribe: 0, website_check: 0 };
+  if (PREVIEW) return { command: 14, search: 6, transcribe: 3, website_check: 41 };
+  const start = new Date();
+  start.setUTCDate(1);
+  start.setUTCHours(0, 0, 0, 0);
+  const kinds = Object.keys(empty) as (keyof typeof empty)[];
+  const counts = await Promise.all(kinds.map(async (k) => {
+    const { count } = await supabase.from('api_usage').select('id', { count: 'exact', head: true }).eq('kind', k).gte('at', start.toISOString());
+    return count ?? 0;
+  }));
+  return Object.fromEntries(kinds.map((k, i) => [k, counts[i]])) as typeof empty;
+}
