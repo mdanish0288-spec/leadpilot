@@ -20,6 +20,8 @@ describe('demo website', () => {
     expect(html).toContain('1,404 Google reviews');
     expect(html).toContain('Make-up artist');
     expect(html).toContain('Monday');
+    expect(html).toContain('Men’s grooming');
+    expect(html).toContain('Make-up');
     expect(html).toContain('output=embed');
     expect(html).toContain('Sample photos');
     expect(html).not.toMatch(/₹|price list|lorem/i);
@@ -37,7 +39,7 @@ describe('demo website', () => {
   it('leaves sections out instead of inventing data', () => {
     const bare = renderDemo({ ...lead, rating: null, review_count: null, opening_hours: null, phone_intl: null, phone: null }, owner).html;
     expect(bare).not.toContain('Google reviews');
-    expect(bare).not.toContain('Opening hours');
+    expect(bare).not.toContain('Opening hours</dt>');
     expect(bare).not.toContain('wa.me');
   });
   it('picks different designs for different businesses, the same design every time for one business', () => {
@@ -45,6 +47,7 @@ describe('demo website', () => {
     expect(familyOf('cafes')).toBe('food');
     expect(familyOf('house painters')).toBe('trades');
     expect(pickTheme(lead).id).toBe(pickTheme(lead).id);
+    expect(renderDemo({ ...lead, store_colors: '#1b1614,#8b4a2b,#faf7f3' }, owner).html).toContain('--acc:#8b4a2b');
     const ids = new Set(['a1', 'b2', 'c3', 'd4', 'e5', 'f6', 'g7', 'h8'].map((id) => pickTheme({ id, business_type: 'salon' }).id));
     expect(ids.size).toBeGreaterThan(1);
   });

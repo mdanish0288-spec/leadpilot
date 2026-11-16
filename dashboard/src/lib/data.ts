@@ -84,10 +84,10 @@ export interface Lead {
   pricing_tier: 'standard' | 'premium' | 'luxury' | null; stage: string; photo_count: number;
   top_reviews: { rating: number | null; text: string; author: string | null; when: string | null }[];
   sheet_row: number | null; notes: string | null; data_source: 'google' | 'openstreetmap' | 'import'; needs_verification: boolean; place_id?: string; phone_key?: string | null;
-  services?: string[]; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null;
+  services?: string[]; store_colors?: string | null; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null;
 }
 
-const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,demo_slug,demo_link,demo_theme,contacted_by';
+const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,store_colors,demo_slug,demo_link,demo_theme,contacted_by';
 
 export async function loadLeads(): Promise<Lead[]> {
   if (PREVIEW) return PREVIEW_LEADS;
@@ -246,4 +246,10 @@ export async function logOutgoing(lead: Lead, channel: 'whatsapp' | 'email' | 'i
   } else if (!firstContact && ['Contacted', 'Demo Ready'].includes(lead.stage)) {
     await supabase.from('leads').update({ stage: 'Replied' }).eq('id', lead.id);
   }
+}
+
+export async function saveStoreColors(leadId: string, colors: string): Promise<void> {
+  if (PREVIEW) return;
+  const { error } = await supabase.from('leads').update({ store_colors: colors }).eq('id', leadId);
+  if (error) throw new Error(error.message);
 }

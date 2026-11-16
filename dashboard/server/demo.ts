@@ -1,4 +1,5 @@
 // Demo website generator. Pure function: lead data in → one complete, static HTML page out.
+import { renderSalon } from './salon';
 // Rules (design-playbook.md): only real data from the lead (never invented reviews, prices or services),
 // every value HTML-escaped, no JavaScript at all (pure-CSS motion; the host also blocks scripts),
 // phone-first layout with Call/WhatsApp in thumb reach, "noindex", demo banner, sample-photo note.
@@ -6,7 +7,7 @@
 export interface DemoLead {
   id: string; name: string; business_type: string; services: string[]; full_address: string | null; city: string | null; country_code: string | null;
   phone: string | null; phone_intl: string | null; rating: number | null; review_count: number | null; maps_url: string | null;
-  opening_hours: { weekdayDescriptions?: string[] } | null; instagram: string | null;
+  opening_hours: { weekdayDescriptions?: string[] } | null; instagram: string | null; store_colors?: string | null;
 }
 export interface DemoOwner { name: string; businessName?: string }
 
@@ -67,6 +68,7 @@ const img = (id: string, w: number, h: number) => `https://images.unsplash.com/p
 const digits = (p: string | null) => (p ?? '').replace(/\D/g, '');
 
 export function renderDemo(lead: DemoLead, owner: DemoOwner): { html: string; theme: string } {
+  if (familyOf(lead.business_type) === 'beauty' || familyOf(lead.services.join(' ')) === 'beauty') return { html: renderSalon(lead, owner, hash(lead.id)), theme: lead.store_colors ? 'salon-brand' : 'salon' };
   const t = pickTheme(lead);
   const fam = familyOf(lead.business_type);
   const photos = PHOTOS[fam];

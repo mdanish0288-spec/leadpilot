@@ -17,6 +17,8 @@ async function checkOne(url: string): Promise<{ website_status: WebsiteStatus; w
       signal: AbortSignal.timeout(8000),
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; LeadPilotSiteCheck/1.0)', Accept: 'text/html' },
     });
+    // Sites that block robots (401/403/406/429) usually work fine in a browser — never call them broken.
+    if ([401, 403, 406, 429].includes(r.status)) return { website_status: 'good', website_issues: ['Website blocks automatic checks — open it yourself to judge it'], email: null, instagram: null };
     if (!r.ok) return { website_status: 'broken', website_issues: [`Website returns an error (${r.status})`], email: null, instagram: null };
     if (!(r.headers.get('content-type') ?? '').includes('html')) return { website_status: 'broken', website_issues: ['Website does not show a web page'], email: null, instagram: null };
     const html = (await r.text()).slice(0, 200_000);

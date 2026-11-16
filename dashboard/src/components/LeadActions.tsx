@@ -2,23 +2,44 @@ import { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Copy, ExternalLink, Globe, Loader2, Mail, MessageCircle, Send, Sparkles, XCircle } from 'lucide-react';
 import { Button, Card, Notice, Textarea, cx } from './ui';
 import { api } from '../lib/api';
-import { loadMessages, loadSettings, logOutgoing, publishDemo, type Lead, type Message } from '../lib/data';
+import { loadMessages, loadSettings, logOutgoing, publishDemo, saveStoreColors, type Lead, type Message } from '../lib/data';
 import { allPass, checkFirstMessage, emailMessage, mailtoLink, whatsappLink, whatsappMessage, type Sender } from '../../server/outreach';
 
 /** Phase 3: build / rebuild / open the demo website. */
 export function DemoCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const initial = (lead.store_colors ?? '').match(/#[0-9a-f]{6}/gi) ?? [];
+  const [cols, setCols] = useState<string[]>([initial[0] ?? '#1b1614', initial[1] ?? '#9a5b3c', initial[2] ?? '#fbf8f5']);
   async function make() {
     setBusy(true); setErr('');
-    try { onChange(await publishDemo(lead)); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+    try {
+      const store_colors = cols.join(',');
+      if (store_colors !== lead.store_colors) await saveStoreColors(lead.id, store_colors);
+      onChange(await publishDemo({ ...lead, store_colors }));
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   }
+  const colourPicker = (
+    <div className="mb-4 rounded-xl border border-line p-3">
+      <p className="mb-2 text-sm font-medium">Salon's colours</p>
+      <p className="mb-3 text-xs text-muted">Open their Google Maps photos once and match the sign, walls or furniture.</p>
+      <div className="flex flex-wrap gap-3">
+        {['Dark', 'Main colour', 'Light'].map((label, i) => (
+          <label key={label} className="flex items-center gap-2 text-sm">
+            <input type="color" value={cols[i]} onChange={(e) => setCols(cols.map((c, j) => (j === i ? e.target.value : c)))} className="h-9 w-9 cursor-pointer rounded-lg border border-line" />{label}
+          </label>
+        ))}
+      </div>
+      {lead.maps_url && <a href={lead.maps_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm text-accent-ink underline">See their photos on Google Maps</a>}
+    </div>
+  );
   return (
     <Card>
       <h2 className="mb-1 flex items-center gap-2 font-semibold"><Globe size={17} className="text-accent" /> Demo website</h2>
       {lead.demo_link ? (
         <>
           <p className="mb-3 text-sm text-muted">Live and ready to send. Open it on your phone and check it before sending.</p>
+          {colourPicker}
           <a href={lead.demo_link} target="_blank" rel="noopener noreferrer" className="mb-3 block truncate rounded-lg bg-canvas px-3 py-2 text-sm text-accent-ink underline">{lead.demo_link}</a>
           <div className="flex flex-wrap gap-2">
             <a href={lead.demo_link} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-ink"><ExternalLink size={16} /> Open demo</a>
@@ -28,6 +49,7 @@ export function DemoCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) =
       ) : (
         <>
           <p className="mb-3 text-sm text-muted">A premium one-page website made from this business's real details, with sample photos until they send their own.</p>
+          {colourPicker}
           <Button onClick={make} disabled={busy}>{busy ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} {busy ? 'Building…' : 'Make demo website'}</Button>
         </>
       )}
