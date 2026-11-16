@@ -38,14 +38,18 @@ export function osmTagsFor(businessType: string): string[] | null {
   return TAGS.find(([re]) => re.test(t))?.[1] ?? null;
 }
 
-export function buildOverpassQuery(businessType: string, bbox: [number, number, number, number], limit = 150): string {
+/** Asks only for named places that list a phone or email (smaller and faster than fetching everything). */
+export function buildOverpassQuery(businessType: string, bbox: [number, number, number, number], limit = 100): string {
   const [s, w, n, e] = bbox;
   const box = `(${s},${w},${n},${e})`;
   const tags = osmTagsFor(businessType);
-  const parts = tags
-    ? tags.map((t) => { const [k, v] = t.split('='); return `nwr["${k}"="${v}"]["name"]${box};`; })
-    : [`nwr["name"~"${businessType.replace(/s$/, '').replace(/[^\p{L}\p{N} ]/gu, '')}",i]["shop"]${box};`, `nwr["name"~"${businessType.replace(/s$/, '').replace(/[^\p{L}\p{N} ]/gu, '')}",i]["craft"]${box};`];
-  return `[out:json][timeout:45];(${parts.join('')});out center tags ${limit};`;
+  const word = businessType.replace(/s$/, '').replace(/[^\p{L}\p{N} ]/gu, '');
+  const selectors = tags
+    ? tags.map((t) => { const [k, v] = t.split('='); return `["${k}"="${v}"]`; })
+    : [`["name"~"${word}",i]["shop"]`, `["name"~"${word}",i]["craft"]`];
+  const contact = ['phone', 'contact:phone', 'email', 'contact:email'];
+  const parts = selectors.flatMap((sel) => contact.map((c) => `nwr${sel}["name"]["${c}"]${box};`));
+  return `[out:json][timeout:30];(${parts.join('')});out center tags ${limit};`;
 }
 
 export async function geocodeCity(city: string, country: string, fetcher: typeof fetch = (i, o) => fetch(i, o)): Promise<[number, number, number, number]> {
@@ -63,13 +67,14 @@ export interface OsmElement { type: 'node' | 'way' | 'relation'; id: number; lat
 export async function searchOsm(businessType: string, city: string, country: string, fetcher: typeof fetch = (i, o) => fetch(i, o)): Promise<OsmElement[]> {
   const bbox = await geocodeCity(city, country, fetcher);
   const body = new URLSearchParams({ data: buildOverpassQuery(businessType, bbox) });
+  // One try with a hard 45-second limit, so a slow volunteer server can never leave a search stuck.
   let r: Response | null = null;
-  for (let attempt = 0; attempt < 2 && (!r || !r.ok); attempt++) {
-    try {
-      r = await fetcher('https://overpass-api.de/api/interpreter', { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(60_000) });
-    } catch { r = null; }
+  try {
+    r = await fetcher('https://overpass-api.de/api/interpreter', { method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(45_000) });
+  } catch {
+    r = null;
   }
-  if (!r || !r.ok) throw new HttpError(502, 'The free backup map (OpenStreetMap) is busy. Try again in a few minutes.', 'osm_error');
+  if (!r || !r.ok) throw new HttpError(502, 'The free backup map (OpenStreetMap) is busy or too slow right now. Try again in a few minutes.', 'osm_error');
   return ((await r.json()) as { elements?: OsmElement[] }).elements ?? [];
 }
 

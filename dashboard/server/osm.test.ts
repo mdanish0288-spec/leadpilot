@@ -13,9 +13,11 @@ describe('OpenStreetMap backup', () => {
   });
   it('builds a bounded, named-places-only query', () => {
     const q = buildOverpassQuery('cafes', [28.4, 76.8, 28.9, 77.3]);
-    expect(q).toContain('nwr["amenity"="cafe"]["name"](28.4,76.8,28.9,77.3);');
+    expect(q).toContain('nwr["amenity"="cafe"]["name"]["phone"](28.4,76.8,28.9,77.3);');
+    expect(q).toContain('["email"]');
+    expect(q).toContain('[timeout:30]');
     expect(q).toMatch(/out center tags \d+;$/);
-    expect(buildOverpassQuery('aquarium shops', [1, 2, 3, 4])).toContain('"name"~"aquarium shop",i');
+    expect(buildOverpassQuery('aquarium shops', [1, 2, 3, 4])).toContain('["name"~"aquarium shop",i]["shop"]');
   });
   it('keeps only businesses reachable by phone/email, skips chains, canteens and internet cafes, and flags them', () => {
     const els: OsmElement[] = [
