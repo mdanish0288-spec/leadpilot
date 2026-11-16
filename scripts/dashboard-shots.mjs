@@ -4,7 +4,7 @@ import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const [base, out] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
-const pages = [['login', '/?preview&screen=login'], ['enroll', '/?preview&screen=enroll'], ['home', '/?preview'], ['leads', '/leads?preview'], ['alerts', '/alerts?preview'], ['calendar', '/calendar?preview'], ['settings', '/settings?preview'], ['hosting', '/hosting?preview'], ['lead-detail', '/leads/p2?preview']];
+const pages = [['login', '/?preview&screen=login'], ['enroll', '/?preview&screen=enroll'], ['home', '/?preview'], ['leads', '/leads?preview'], ['alerts', '/alerts?preview'], ['calendar', '/calendar?preview'], ['settings', '/settings?preview'], ['hosting', '/hosting?preview'], ['lead-detail', '/leads/p2?preview'], ['import', '/leads/import?preview']];
 const vps = { phone: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 }, desktop: { width: 1440, height: 900, deviceScaleFactor: 1 } };
 const b = await chromium.launch(); let fails = 0;
 for (const [name, path] of pages) for (const [vn, vp] of Object.entries(vps)) {
@@ -32,6 +32,23 @@ for (const [vn, vp] of Object.entries(vps)) {
   await p.waitForTimeout(300);
   await p.screenshot({ path: `${out}/flow-done-${vn}.png` });
   console.log(`${errs.length ? 'FAIL' : 'PASS'} command-flow ${vn}${errs.length ? ' — ' + errs.join(' | ') : ''}`); if (errs.length) fails++;
+  await ctx.close();
+}
+// Import flow: link → preview → import → done
+for (const [vn, vp] of Object.entries(vps)) {
+  const ctx = await b.newContext({ viewport: { width: vp.width, height: vp.height }, isMobile: vp.isMobile, deviceScaleFactor: vp.deviceScaleFactor });
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto(base + '/leads/import?preview', { waitUntil: 'networkidle' });
+  await p.fill('#sheet_link', 'https://docs.google.com/spreadsheets/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789/edit');
+  await p.getByRole('button', { name: 'Read the sheet' }).click();
+  await p.getByText('businesses ready').waitFor();
+  await p.screenshot({ path: `${out}/import-preview-${vn}.png`, fullPage: true });
+  await p.fill('#imp_city', 'Lucknow');
+  await p.getByRole('button', { name: /Import \d+ businesses/ }).click();
+  await p.getByText('Import finished').waitFor();
+  await p.waitForTimeout(300);
+  await p.screenshot({ path: `${out}/import-done-${vn}.png`, fullPage: true });
+  console.log(`${errs.length ? 'FAIL' : 'PASS'} import-flow ${vn}${errs.length ? ' — ' + errs.join(' | ') : ''}`); if (errs.length) fails++;
   await ctx.close();
 }
 await b.close(); process.exit(fails ? 1 : 0);

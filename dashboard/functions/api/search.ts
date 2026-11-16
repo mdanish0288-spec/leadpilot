@@ -7,6 +7,7 @@ import { Db, bearer, errorResponse, HttpError, json, requireOwner } from '../../
 import { buildPlacesQuery } from '../../server/command';
 import { placesToLeads, searchPlaces } from '../../server/places';
 import { osmToLeads, searchOsm } from '../../server/osm';
+import { applyLessons, type Lesson } from '../../server/lessons';
 import { appendToSheet } from '../../server/sync';
 import type { SheetLead } from '../../server/sheet';
 
@@ -73,6 +74,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       }
     }
 
+    // Lessons from mistakes the owner reported earlier (e.g. "this is a chain", "already has a website").
+    const lessons = await db.select<Lesson>('lessons?select=id,kind,value,reason');
+    const learned = applyLessons(rows as { name: string; place_id: string; phone?: string | null; phone_intl?: string | null }[], lessons);
+    rows = learned.kept as Record<string, unknown>[];
+    if (learned.blocked.length) await db.rpc('bump_lessons', { p_ids: [...new Set(learned.blocked.map((b) => b.lesson.id))] });
+
     // Duplicates (already found in an earlier search) are skipped by the unique place_id rule.
     const inserted = rows.length
       ? await db.insert<SheetLead & { id: string; lead_type: string }>('leads', rows, '?on_conflict=place_id&columns=' + Object.keys(rows[0]).join(','), true)
@@ -92,6 +99,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       fallback_reason: fallbackReason,
       found,
       usable: rows.length,
+      skipped_by_lessons: learned.blocked.length,
       new_leads: inserted.length,
       duplicates,
       hot: inserted.filter((l) => l.lead_type === 'hot').length,

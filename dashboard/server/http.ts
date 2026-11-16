@@ -68,7 +68,7 @@ export class Db {
 }
 
 /** Owner + 2FA check, hourly rate limit and usage record — all in one database call. */
-export async function requireOwner(db: Db, kind: 'command' | 'search' | 'transcribe' | 'website_check', maxPerHour: number) {
+export async function requireOwner(db: Db, kind: 'command' | 'search' | 'transcribe' | 'website_check' | 'import', maxPerHour: number) {
   const result = await db.rpc<string>('use_quota', { p_kind: kind, p_max_per_hour: maxPerHour });
   if (result === 'not_owner') throw new HttpError(403, 'Only the owner, signed in with 2FA, can do this.', 'not_owner');
   if (result === 'rate_limited') throw new HttpError(429, `Hourly limit reached for ${kind.replace('_', ' ')}. Try again later.`, 'rate_limited');

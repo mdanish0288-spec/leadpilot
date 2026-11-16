@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { onRequestPost as search } from '../functions/api/search';
 import { onRequestPost as checkWebsites } from '../functions/api/check-websites';
 import { onRequestPost as command } from '../functions/api/command';
+import { onRequestPost as importLeads } from '../functions/api/import';
 
 let serviceAccountJson = '';
 beforeAll(async () => {
@@ -20,7 +21,7 @@ const places = [
   { id: 'D', displayName: { text: 'Already Known Cafe' }, businessStatus: 'OPERATIONAL' },
 ];
 
-function fakeServices(opts: { quota?: string; sheetLinked?: boolean; googleDown?: boolean } = {}) {
+function fakeServices(opts: { quota?: string; sheetLinked?: boolean; googleDown?: boolean; lessons?: unknown[] } = {}) {
   const calls: string[] = [];
   const leads: Record<string, unknown>[] = [];
   const fake = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -30,6 +31,8 @@ function fakeServices(opts: { quota?: string; sheetLinked?: boolean; googleDown?
     const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
     if (url.includes('/rpc/use_quota')) return ok(opts.quota ?? 'ok');
     if (url.includes('/rpc/set_sheet_rows') || url.includes('/rpc/apply_website_checks')) return ok(1);
+    if (url.includes('/rpc/bump_lessons')) return ok(null);
+    if (url.includes('/rest/v1/lessons')) return ok(opts.lessons ?? []);
     if (url.includes('/rest/v1/searches') && method === 'POST') return ok([{ id: 's1', query: 'cafes in Tokyo, Japan', business_type: 'cafes', city: 'Tokyo', country: 'Japan', country_code: 'JP', results_found: 0, new_leads: 0, duplicates: 0, next_page_token: null }]);
     if (url.includes('/rest/v1/searches') && method === 'PATCH') return new Response(null, { status: 204 });
     if (url.includes('/rest/v1/leads') && method === 'POST') {
@@ -38,6 +41,7 @@ function fakeServices(opts: { quota?: string; sheetLinked?: boolean; googleDown?
       leads.push(...fresh);
       return ok(fresh);
     }
+    if (url.includes('phone_key=in.')) return ok([{ phone_key: '9839022222' }]);
     if (url.includes('/rest/v1/leads?website_status=eq.pending&order')) return ok(leads.filter((l) => l.website_status === 'pending').map((l) => ({ ...l, sheet_row: 3 })));
     if (url.includes('/rest/v1/leads?website_status=eq.pending&select=id')) return ok([]);
     if (url.includes('/rest/v1/settings')) return ok([{ google_sheet_id: opts.sheetLinked === false ? '' : '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789' }]);
@@ -117,6 +121,40 @@ describe('search flow', () => {
     fakeServices();
     const res = await run(search, req('/api/search', { business_type: 'cafes', city: 'Delhi', country: 'India', country_code: 'IN' }), { GOOGLE_SERVICE_ACCOUNT_JSON: serviceAccountJson });
     expect(((await res.json()) as { source: string }).source).toBe('openstreetmap');
+  });
+
+  it('never repeats a reported mistake: a lesson blocks that business in the next search', async () => {
+    const s = fakeServices({ lessons: [{ id: 'l1', kind: 'skip_place', value: 'A', reason: 'has_website' }] });
+    const body = (await (await run(search, req('/api/search', { business_type: 'cafes', city: 'Tokyo', country: 'Japan', country_code: 'JP' }))).json()) as Record<string, unknown>;
+    expect(body.skipped_by_lessons).toBe(1);
+    expect(body.new_leads).toBe(2);
+    expect(s.leads.some((l) => l.place_id === 'A')).toBe(false);
+    expect(s.calls.some((c) => c.includes('bump_lessons'))).toBe(true);
+  });
+
+  it('imports the owner sheet: skips known phones and lessons, keeps the rest, Hot first', async () => {
+    const s = fakeServices({ lessons: [{ id: 'l2', kind: 'skip_name', value: 'big chain cafe', reason: 'chain' }] });
+    const rows = [
+      { name: 'Sharma Tea', phone: '+91 98390 11111', website: null, rating: 4.6, reviews: 300 },
+      { name: 'Already Known', phone: '+91 98390 22222', website: null },
+      { name: 'Big Chain Cafe', phone: '+91 98390 33333', website: null },
+      { name: 'Site Cafe', phone: '+91 98390 44444', website: 'sitecafe.in' },
+    ].map((r) => ({ type: null, address: null, city: null, country: null, whatsapp: null, email: null, instagram: null, rating: null, reviews: null, maps: null, notes: null, ...r }));
+    const res = await run(importLeads, req('/api/import', { rows, has_website_column: true, defaults: { businessType: 'cafes', city: 'Lucknow', country: 'India', countryCode: 'IN' } }));
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(res.status).toBe(200);
+    expect(body.imported).toBe(2);
+    expect(body.duplicates).toBe(1);
+    expect(body.blocked).toEqual([{ name: 'Big Chain Cafe', reason: 'Big chain / franchise' }]);
+    expect(body.hot).toBe(1);
+    expect(body.checking).toBe(1);
+    expect(s.leads.map((l) => l.name)).toEqual(['Sharma Tea', 'Site Cafe']);
+  });
+
+  it('refuses an import without a country (prices depend on it)', async () => {
+    fakeServices();
+    const res = await run(importLeads, req('/api/import', { rows: [{ name: 'X', phone: '+91 1' }], defaults: { city: 'Lucknow' } }));
+    expect(res.status).toBe(400);
   });
 
   it('refuses without sign-in', async () => {

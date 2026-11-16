@@ -83,10 +83,10 @@ export interface Lead {
   score_reasons: { label: string; points: number; max: number; detail: string }[];
   pricing_tier: 'standard' | 'premium' | 'luxury' | null; stage: string; photo_count: number;
   top_reviews: { rating: number | null; text: string; author: string | null; when: string | null }[];
-  sheet_row: number | null; notes: string | null; data_source: 'google' | 'openstreetmap'; needs_verification: boolean;
+  sheet_row: number | null; notes: string | null; data_source: 'google' | 'openstreetmap' | 'import'; needs_verification: boolean; place_id?: string; phone_key?: string | null;
 }
 
-const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification';
+const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key';
 
 export async function loadLeads(): Promise<Lead[]> {
   if (PREVIEW) return PREVIEW_LEADS;
@@ -156,4 +156,52 @@ export async function usageThisMonth(): Promise<Record<'command' | 'search' | 't
     return count ?? 0;
   }));
   return Object.fromEntries(kinds.map((k, i) => [k, counts[i]])) as typeof empty;
+}
+
+// ---------------- Learning loop ----------------
+import { lessonsFromFeedback, type FeedbackReason } from '../../server/lessons';
+import { SHEET_COLUMNS, leadToRow, type SheetLead } from '../../server/sheet';
+
+/** Saves the mistake, turns it into lessons, and fixes this lead straight away. */
+export async function reportMistake(lead: Lead, reason: FeedbackReason, note: string): Promise<void> {
+  if (PREVIEW) return;
+  const { error: e1 } = await supabase.from('lead_feedback').insert({ lead_id: lead.id, lead_name: lead.name, reason, note: note.trim() || null });
+  if (e1) throw new Error(`Could not save: ${e1.message}`);
+  const rules = lessonsFromFeedback(reason, { name: lead.name, place_id: lead.place_id ?? lead.id, phone_key: lead.phone_key ?? null })
+    .map((r) => ({ ...r, example: lead.name }));
+  const { error: e2 } = await supabase.from('lessons').upsert(rules, { onConflict: 'kind,value', ignoreDuplicates: true });
+  if (e2) throw new Error(`Could not save the lesson: ${e2.message}`);
+  const patch: Record<string, unknown> = { lead_type: 'skip', notes: `${lead.notes ? lead.notes + ' · ' : ''}Owner: ${reason.replace('_', ' ')}${note.trim() ? ` — ${note.trim()}` : ''}` };
+  if (reason === 'has_website') patch.website_status = 'good';
+  if (reason === 'closed' || reason === 'not_target' || reason === 'chain') patch.stage = 'Not Interested';
+  const { error: e3 } = await supabase.from('leads').update(patch).eq('id', lead.id);
+  if (e3) throw new Error(`Could not update the lead: ${e3.message}`);
+}
+
+export interface LessonRow { id: string; created_at: string; kind: string; value: string; reason: string; example: string | null; times_applied: number }
+export async function loadLessons(): Promise<LessonRow[]> {
+  if (PREVIEW) return [{ id: 'x', created_at: '2026-11-16T10:00:00Z', kind: 'skip_name', value: 'cafe coffee day', reason: 'chain', example: 'Cafe Coffee Day', times_applied: 4 }];
+  const { data, error } = await supabase.from('lessons').select('*').order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data as LessonRow[];
+}
+export async function deleteLesson(id: string): Promise<void> {
+  if (PREVIEW) return;
+  const { error } = await supabase.from('lessons').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+/** All leads as a CSV file with the same 33 columns as the Google Sheet (works without any Google key). */
+export async function leadsCsv(): Promise<string> {
+  let rows: SheetLead[];
+  if (PREVIEW) rows = PREVIEW_LEADS as unknown as SheetLead[];
+  else {
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    rows = data as SheetLead[];
+  }
+  const esc = (v: string) => (/[",\n]/.test(v) || /^[=+\-@]/.test(v) ? `"${(/^[=+\-@]/.test(v) ? "'" : '') + v.replace(/"/g, '""')}"` : v);
+  return [[...SHEET_COLUMNS], ...rows.map((r) => leadToRow({ ...r, delivery_links: r.delivery_links ?? {}, advance_status: r.advance_status ?? '', final_payment_status: r.final_payment_status ?? '' }))]
+    .map((row) => row.map((c) => esc(String(c))).join(','))
+    .join('\r\n');
 }

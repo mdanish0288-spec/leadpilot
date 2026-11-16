@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ImageUp, Plus, Save } from 'lucide-react';
 import { Button, Card, Field, Input, Notice, PageHeader, Select, Textarea, Toggle, cx } from '../components/ui';
 import { SheetSection } from '../components/SheetSection';
+import { LessonsSection } from '../components/LessonsSection';
 import { loadSettings, loadTiers, saveSettings, saveTiers, signedFileUrl, uploadOwnerFile } from '../lib/data';
 import { TIERS, USDT_NETWORKS, WEEKDAYS, type PriceTier, type Settings, type Weekday } from '../lib/types';
 import { formatMoney, HARD_MAX_DAILY_EMAILS, launchOfferClashes, validatePriceTier, validateSettings, type Errors } from '../lib/validate';
@@ -106,6 +107,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" subtitle="Everything LeadPilot is allowed to say and charge comes from this page." />
 
       <SheetSection />
+      <LessonsSection />
 
       <Section title="You and your business" text="Shown in messages and on the demo banner. Never use a fake name.">
         <div className="grid gap-4 sm:grid-cols-2">

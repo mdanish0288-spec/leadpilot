@@ -50,6 +50,8 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - Cloudflare free plan: 10 ms CPU and 50 outbound requests per call — keep batches small. Never store `fetch` as an object property (Workers "Illegal invocation"); wrap it in an arrow.
 - Secrets (Cloudflare Pages → Settings → Variables and Secrets, type Secret): `GEMINI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`.
 - Search source: Google Places first; if Google is missing/refuses, automatic free backup = OpenStreetMap (Nominatim + Overpass, no key). Backup leads: phone/email required, chains/canteens skipped, no ratings, `data_source='openstreetmap'`, `needs_verification=true`, attribution "© OpenStreetMap contributors (ODbL)".
+- Import: owner's own Google Sheet (link shared "Anyone with the link", read via /api/fetch-sheet) or CSV. `server/importer.ts` detects columns, skips rows with no name or no contact, dedupes by phone (last 10 digits, `leads.phone_key`) and place id. No Website column → `needs_verification`.
+- Learning loop: "Report a mistake" on a lead → `lead_feedback` + `lessons` (skip_place / skip_name for chains / skip_phone). Every search and import runs `applyLessons` before saving. Owner can undo lessons in Settings.
 - Website checks run while the dashboard is open (resumed on next open). A Worker cron for fully unattended jobs comes with Phase 4/5.
 
 ## Security model (Phase 1)

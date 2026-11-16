@@ -37,6 +37,7 @@ export interface ParsedCommand {
 export interface SheetResult { ok: boolean; rows?: number; reason?: string }
 export interface SearchResult { search_id: string; source: 'google' | 'openstreetmap'; fallback_reason: string | null; usable: number; found: number; new_leads: number; duplicates: number; hot: number; checking: number; more_available: boolean; sheet: SheetResult }
 export interface CheckResult { checked: number; remaining: boolean; sheet: SheetResult }
+export interface ImportResult { received: number; imported: number; duplicates: number; blocked: { name: string; reason: string }[]; hot: number; checking: number; sheet: SheetResult }
 export interface Status { ai: boolean; places: boolean; voice: boolean; sheet_key: boolean; sheet_link: boolean; service_account_email: string | null }
 
 export const api = {
@@ -48,6 +49,8 @@ export const api = {
     return call<{ text: string; language_code: string | null }>('/api/transcribe', { method: 'POST', body: f });
   },
   search: (body: Record<string, unknown>) => call<SearchResult>('/api/search', { method: 'POST', body: JSON.stringify(body) }),
+  fetchSheet: (url: string) => call<{ csv: string }>('/api/fetch-sheet', { method: 'POST', body: JSON.stringify({ url }) }),
+  importRows: (body: Record<string, unknown>) => call<ImportResult>('/api/import', { method: 'POST', body: JSON.stringify(body) }),
   checkWebsites: () => call<CheckResult>('/api/check-websites', { method: 'POST', body: '{}' }),
   syncSheet: () => call<{ added: number; remaining: boolean; sheet: SheetResult }>('/api/sync-sheet', { method: 'POST', body: '{}' }),
 };
@@ -71,6 +74,8 @@ function previewResponse(path: string): unknown {
   if (path === '/api/status') return { ai: true, places: true, voice: true, sheet_key: false, sheet_link: false, service_account_email: 'leadpilot-sheets@your-project.iam.gserviceaccount.com' };
   if (path === '/api/command') return { status: 'ready', business_type: 'cafes', city: 'Tokyo', country: 'Japan', country_code: 'JP', language: 'hinglish', question: null, summary: 'Cafes in Tokyo, Japan' };
   if (path === '/api/search') return { search_id: 'preview', source: 'google', fallback_reason: null, usable: 20, found: 20, new_leads: 17, duplicates: 3, hot: 9, checking: 8, more_available: true, sheet: { ok: false, reason: 'Google Sheet link is not set in Settings yet.' } };
+  if (path === '/api/fetch-sheet') return { csv: ['Business Name,Phone,Website,Rating,Reviews,Address', 'Sharma Tea Stall,+91 98390 11111,,4.6,320,Hazratganj', 'Royal Bakery,+91 98390 22222,royalbakery.in,4.2,85,Aminabad', 'No Phone Cafe,,,4.1,12,Gomti Nagar', 'Green Leaf Cafe,+91 98390 33333,,4.8,1200,Indira Nagar'].join(String.fromCharCode(10)) };
+  if (path === '/api/import') return { received: 3, imported: 3, duplicates: 0, blocked: [], hot: 2, checking: 1, sheet: { ok: false, reason: 'Google Sheet link is not set in Settings yet.' } };
   if (path === '/api/check-websites') return { checked: 8, remaining: false, sheet: { ok: true, rows: 0 } };
   return {};
 }

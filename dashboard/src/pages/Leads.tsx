@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { ArrowLeft, Camera, ExternalLink, Flame, Globe, Mail, MapPin, Phone, Star, Sun, Users } from 'lucide-react';
-import { Card, EmptyState, Notice, PageHeader, cx } from '../components/ui';
-import { loadLead, loadLeads, type Lead } from '../lib/data';
+import { AlertTriangle, ArrowLeft, Camera, Download, ExternalLink, Flame, Globe, Mail, MapPin, Phone, Star, Sun, Upload, Users } from 'lucide-react';
+import { Button, Card, EmptyState, Notice, PageHeader, Textarea, cx } from '../components/ui';
+import { leadsCsv, loadLead, loadLeads, reportMistake, type Lead } from '../lib/data';
+import { rankLeads } from '../../server/importer';
+import { REASON_TEXT, type FeedbackReason } from '../../server/lessons';
 import { LEAD_STAGES } from '../lib/types';
 
 const TYPE_LABEL: Record<Lead['lead_type'], string> = { hot: 'Hot', warm: 'Warm', skip: 'Skip', pending: 'Checking…' };
@@ -34,19 +36,40 @@ export function LeadsPage() {
     return m;
   }, [leads]);
 
-  const shown = (leads ?? []).filter((l) => (!stage || l.stage === stage) && (!type || l.lead_type === type));
+  const sort = params.get('sort') ?? 'best';
+  const filtered = (leads ?? []).filter((l) => (!stage || l.stage === stage) && (!type || l.lead_type === type));
+  const shown = sort === 'best' ? rankLeads(filtered) : filtered;
+  const [downloading, setDownloading] = useState(false);
+  async function download() {
+    setDownloading(true);
+    try {
+      const blob = new Blob(['﻿' + (await leadsCsv())], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `leadpilot-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) { setError((e as Error).message); } finally { setDownloading(false); }
+  }
   const setFilter = (k: string, v: string | null) => { const p = new URLSearchParams(params); if (v) p.set(k, v); else p.delete(k); p.delete('search'); setParams(p); };
 
   return (
     <>
-      <PageHeader title="Leads" subtitle="Every business LeadPilot finds, from first contact to delivery." />
+      <PageHeader title="Leads" subtitle="Every business LeadPilot finds, from first contact to delivery."
+        action={<div className="flex flex-wrap gap-2">
+          <Link to="/leads/import" className="inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-ink"><Upload size={16} /> Import leads</Link>
+          <Button variant="secondary" onClick={download} disabled={downloading || !leads?.length}><Download size={16} /> {downloading ? 'Preparing…' : 'Download CSV'}</Button>
+        </div>} />
       {error && <Notice tone="danger">{error}</Notice>}
 
       <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         <Chip on={!stage} onClick={() => setFilter('stage', null)}>All <span className="opacity-70">{leads?.length ?? 0}</span></Chip>
         {LEAD_STAGES.map((s) => <Chip key={s} on={stage === s} onClick={() => setFilter('stage', s)}>{s} <span className="tabular-nums opacity-70">{stageCounts.get(s) ?? 0}</span></Chip>)}
       </div>
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <select aria-label="Sort leads" value={sort} onChange={(e) => setFilter('sort', e.target.value)} className="h-8 rounded-full border border-line bg-white px-3 text-sm text-muted">
+          <option value="best">Best first</option><option value="new">Newest first</option>
+        </select>
         {([null, 'hot', 'warm', 'skip', 'pending'] as const).map((t) => (
           <Chip key={t ?? 'all'} small on={type === t} onClick={() => setFilter('type', t)}>{t ? TYPE_LABEL[t] : 'Any type'}</Chip>
         ))}
@@ -176,10 +199,12 @@ export function LeadDetailPage() {
               ))}
             </ul>
           </Card>
+          <ReportMistake lead={lead} onDone={(l) => setLead(l)} />
           <Card>
             <h2 className="mb-2 font-semibold">Coming in later phases</h2>
             <p className="text-sm text-muted">Demo website, chats (email, WhatsApp, Instagram), client requirements, deep photo analysis and AI notes appear here as each phase is built.</p>
             {lead.sheet_row && <p className="mt-3 text-sm text-muted">In Google Sheet: row {lead.sheet_row}</p>}
+            {lead.data_source === 'import' && <p className="mt-3 text-xs text-muted">Imported from your sheet</p>}
             {lead.data_source === 'openstreetmap' && <p className="mt-3 text-xs text-muted">Data © OpenStreetMap contributors (ODbL)</p>}
           </Card>
         </div>
@@ -193,5 +218,45 @@ function Row({ icon, label, children }: { icon: React.ReactNode; label: string; 
     <div className="grid grid-cols-[20px_110px_1fr] items-start gap-2">
       <span className="mt-0.5 text-muted">{icon}</span><dt className="text-muted">{label}</dt><dd className="min-w-0">{children}</dd>
     </div>
+  );
+}
+
+/** Learning loop: the owner marks what was wrong; LeadPilot remembers and never repeats it. */
+function ReportMistake({ lead, onDone }: { lead: Lead; onDone: (l: Lead) => void }) {
+  const [reason, setReason] = useState<FeedbackReason | null>(null);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ tone: 'ok' | 'danger'; text: string } | null>(null);
+  async function save() {
+    if (!reason) return;
+    setBusy(true);
+    try {
+      await reportMistake(lead, reason, note);
+      setMsg({ tone: 'ok', text: 'Saved. LeadPilot will skip this business (and others like it) in future searches and imports.' });
+      onDone({ ...lead, lead_type: 'skip', stage: ['closed', 'not_target', 'chain'].includes(reason) ? 'Not Interested' : lead.stage });
+      setReason(null);
+      setNote('');
+    } catch (e) {
+      setMsg({ tone: 'danger', text: (e as Error).message });
+    } finally { setBusy(false); }
+  }
+  return (
+    <Card>
+      <h2 className="mb-1 flex items-center gap-2 font-semibold"><AlertTriangle size={16} className="text-warn" /> Report a mistake</h2>
+      <p className="mb-3 text-sm text-muted">Wrong lead? Tell LeadPilot why — it learns and won't repeat it.</p>
+      <div className="flex flex-wrap gap-2">
+        {(Object.keys(REASON_TEXT) as FeedbackReason[]).map((r) => (
+          <button key={r} type="button" aria-pressed={reason === r} onClick={() => { setReason(r); setMsg(null); }}
+            className={cx('rounded-full border px-3 py-1.5 text-sm', reason === r ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-white text-muted hover:text-ink')}>{REASON_TEXT[r]}</button>
+        ))}
+      </div>
+      {reason && (
+        <div className="mt-3 space-y-3">
+          <Textarea aria-label="Optional note" placeholder="Optional note, e.g. their website is example.com" value={note} onChange={(e) => setNote(e.target.value)} className="!min-h-16" />
+          <Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save and learn'}</Button>
+        </div>
+      )}
+      {msg && <div className="mt-3"><Notice tone={msg.tone}>{msg.text}</Notice></div>}
+    </Card>
   );
 }
