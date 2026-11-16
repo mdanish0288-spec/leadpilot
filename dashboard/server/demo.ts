@@ -1,5 +1,6 @@
 // Demo website generator. Pure function: lead data in → one complete, static HTML page out.
-import { renderSalon } from './salon';
+import { renderPremium } from './salon';
+import { profileFor } from './profiles';
 // Rules (design-playbook.md): only real data from the lead (never invented reviews, prices or services),
 // every value HTML-escaped, no JavaScript at all (pure-CSS motion; the host also blocks scripts),
 // phone-first layout with Call/WhatsApp in thumb reach, "noindex", demo banner, sample-photo note.
@@ -68,7 +69,9 @@ const img = (id: string, w: number, h: number) => `https://images.unsplash.com/p
 const digits = (p: string | null) => (p ?? '').replace(/\D/g, '');
 
 export function renderDemo(lead: DemoLead, owner: DemoOwner): { html: string; theme: string } {
-  if (familyOf(lead.business_type) === 'beauty' || familyOf(lead.services.join(' ')) === 'beauty') return { html: renderSalon(lead, owner, hash(lead.id)), theme: lead.store_colors ? 'salon-brand' : 'salon' };
+  // Every industry gets the premium design; the profile picks photos, words, fonts and colours.
+  const profile = profileFor(lead);
+  if (profile) return { html: renderPremium(lead, owner, hash(lead.id), profile), theme: `${profile.id}${lead.store_colors ? '-brand' : ''}` };
   const t = pickTheme(lead);
   const fam = familyOf(lead.business_type);
   const photos = PHOTOS[fam];

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { esc, familyOf, pickTheme, renderDemo, slugFor, type DemoLead } from './demo';
+import { profileFor } from './profiles';
 import { allPass, checkFirstMessage, emailMessage, whatsappLink, whatsappMessage } from './outreach';
 
 const lead: DemoLead = {
@@ -50,6 +51,26 @@ describe('demo website', () => {
     expect(renderDemo({ ...lead, store_colors: '#1b1614,#8b4a2b,#faf7f3' }, owner).html).toContain('--acc:#8b4a2b');
     const ids = new Set(['a1', 'b2', 'c3', 'd4', 'e5', 'f6', 'g7', 'h8'].map((id) => pickTheme({ id, business_type: 'salon' }).id));
     expect(ids.size).toBeGreaterThan(1);
+  });
+  it('gives every industry its own photos and words (never house photos for a car wash)', () => {
+    const kind = (business_type: string, services: string[] = [], name = 'Test') => profileFor({ business_type, services, name }).id;
+    expect(kind('car wash')).toBe('carwash');
+    expect(kind('Car Spa')).toBe('carwash');
+    expect(kind('services', ['Car detailing service'])).toBe('carwash');
+    expect(kind('home cleaning service')).toBe('cleaning');
+    expect(kind('cafe')).toBe('cafe');
+    expect(kind('restaurant')).toBe('restaurant');
+    expect(kind('dentist')).toBe('clinic');
+    expect(kind('gym')).toBe('gym');
+    expect(kind('plumber')).toBe('plumber');
+    expect(kind('beauty parlour')).toBe('salon');
+    expect(kind('shop')).toBe('local');
+    const car = renderDemo({ ...lead, name: 'Shine Car Wash', business_type: 'car wash', services: ['Car wash', 'Car detailing service'] }, owner).html;
+    expect(car).toContain('1607860108855-64acf2078ed9');
+    expect(car).not.toContain('1600585154340-be6161a56a0c');
+    expect(car).toContain('Book a wash');
+    expect(car).toContain('Detailing');
+    expect(car).not.toMatch(/salon|<script/i);
   });
   it('makes clean web addresses', () => {
     expect(slugFor("Saalim'S Beauty Salon", 'ab12-cd')).toBe('saalim-s-beauty-salon-ab12');

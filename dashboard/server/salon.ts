@@ -1,8 +1,9 @@
-// Premium salon / beauty demo. Pure CSS motion + 3D (no JavaScript: the host blocks scripts).
+// Premium demo design for every industry (started as the salon design). Pure CSS motion + 3D (no JavaScript: the host blocks scripts).
 // Salon psychology: calm luxury spacing, serif elegance, social proof in the first screen, one clear action (Book),
 // thumb-reach booking bar on phones. Facts come only from the lead; service descriptions are generic category
 // descriptions (no prices, no invented reviews, awards or years).
 import { esc, type DemoLead, type DemoOwner } from './demo';
+import { pickServices, profileFor, type Profile } from './profiles';
 
 export interface Palette { ink: string; accent: string; soft: string; paper: string }
 
@@ -14,13 +15,13 @@ const DEFAULT_PALETTES: Palette[] = [
 ];
 
 /** "#1b1614,#9a5b3c,#fbf8f5" (dark, accent, light) → palette. Falls back to a preset. */
-export function paletteFor(storeColors: string | null | undefined, seed: number): Palette {
+export function paletteFor(storeColors: string | null | undefined, seed: number, presets: Palette[] = DEFAULT_PALETTES): Palette {
   const hex = (storeColors ?? '').match(/#[0-9a-f]{6}/gi) ?? [];
   if (hex.length >= 2) {
     const [ink, accent, paper = '#fbf8f5'] = hex as [string, string, string?];
     return { ink, accent, paper, soft: mix(accent, paper, 0.84) };
   }
-  return DEFAULT_PALETTES[seed % DEFAULT_PALETTES.length];
+  return presets[seed % presets.length];
 }
 
 function mix(a: string, b: string, t: number): string {
@@ -29,48 +30,24 @@ function mix(a: string, b: string, t: number): string {
   return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('');
 }
 
-interface Service { title: string; text: string; icon: string }
-const ICON = {
-  hair: '<path d="M6 3c4 2 6 6 6 11M18 3c-4 2-6 6-6 11M8 21c0-4 1.5-7 4-7s4 3 4 7"/>',
-  skin: '<circle cx="12" cy="12" r="8"/><path d="M8.5 14c1 1.2 2.1 1.8 3.5 1.8s2.5-.6 3.5-1.8M9 10h.01M15 10h.01"/>',
-  makeup: '<path d="M9 21h6M10 21V11h4v10M11 11V6l2-3v8"/>',
-  nails: '<path d="M8 21V10a4 4 0 0 1 8 0v11"/><path d="M10 6.5C10 4 11 3 12 3s2 1 2 3.5"/>',
-  groom: '<path d="M4 20 20 4M7 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM17 14a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>',
-  bridal: '<path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>',
-};
-
-/** Picks 4 service categories from the real Google categories (falls back to a classic salon set). */
-export function salonServices(services: string[], name: string): Service[] {
-  const all = `${services.join(' ')} ${name}`.toLowerCase();
-  const out: Service[] = [{ title: 'Hair', text: 'Cuts, styling, colour and treatments — for the look you came in for.', icon: ICON.hair }];
-  if (/facial|skin|spa|clean/.test(all)) out.push({ title: 'Skin & facials', text: 'Facials and clean-ups that leave your skin calm, clear and glowing.', icon: ICON.skin });
-  if (/make-?up|bridal|mehndi/.test(all)) out.push({ title: /bridal/.test(all) ? 'Bridal & make-up' : 'Make-up', text: 'Make-up for parties, functions and your big day.', icon: /bridal/.test(all) ? ICON.bridal : ICON.makeup });
-  if (/nail/.test(all)) out.push({ title: 'Nails', text: 'Manicures, pedicures and nail art, done neatly and hygienically.', icon: ICON.nails });
-  if (/barber|unisex|men/.test(all)) out.push({ title: 'Men’s grooming', text: 'Sharp cuts, beard styling and grooming for men.', icon: ICON.groom });
-  for (const fill of [{ title: 'Skin & facials', text: 'Facials and clean-ups that leave your skin calm, clear and glowing.', icon: ICON.skin }, { title: 'Make-up', text: 'Make-up for parties, functions and your big day.', icon: ICON.makeup }, { title: 'Waxing & threading', text: 'Quick, gentle and hygienic hair removal.', icon: ICON.nails }]) {
-    if (out.length >= 4) break;
-    if (!out.some((s) => s.title.startsWith(fill.title.split(' ')[0]))) out.push(fill);
-  }
-  return out.slice(0, 4);
-}
-
 const img = (id: string, w: number, h: number) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=72&w=${w}&h=${h}`;
-const PH = { a: '1600948836101-f9ffda59d250', b: '1522337360788-8b13dee7a37e', c: '1560066984-138dadb4c035', d: '1595476108010-b4d1f102b1b1', e: '1487412947147-5cebf100ffc2', f: '1604654894610-df63bc536371' };
 
-export function renderSalon(lead: DemoLead & { store_colors?: string | null }, owner: DemoOwner, seed: number): string {
-  const c = paletteFor(lead.store_colors, seed);
+/** The premium demo design, used for every industry. Words, photos, fonts and preset colours come from the profile. */
+export function renderPremium(lead: DemoLead & { store_colors?: string | null }, owner: DemoOwner, seed: number, p: Profile = profileFor(lead)): string {
+  const c = paletteFor(lead.store_colors, seed, p.palettes);
+  const PH = p.photos;
   const city = lead.city ?? '';
   const phone = lead.phone_intl ?? lead.phone;
   const tel = phone ? `tel:${phone.replace(/[^\d+]/g, '')}` : null;
-  const wa = (lead.phone_intl ?? '').replace(/\D/g, '').length >= 10 ? `https://wa.me/${lead.phone_intl!.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${lead.name}, I'd like to book an appointment.`)}` : null;
+  const wa = (lead.phone_intl ?? '').replace(/\D/g, '').length >= 10 ? `https://wa.me/${lead.phone_intl!.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${lead.name}, ${p.waText}`)}` : null;
   const hours = lead.opening_hours?.weekdayDescriptions ?? [];
   const daysOpen = hours.filter((h) => !/closed/i.test(h)).length;
-  const services = salonServices(lead.services, lead.name);
+  const services = pickServices(p, lead.services, lead.name);
   const credit = owner.businessName?.trim() ? `${owner.name} (${owner.businessName.trim()})` : owner.name;
   const split = lead.name.match(/^(.*?)\s+(by\s+.+)$/i);
   const titleA = split ? split[1] : lead.name;
   const titleB = split ? split[2] : '';
-  const unisex = /unisex/i.test(lead.name + lead.services.join(' '));
+  const unisex = p.id === 'salon' && /unisex/i.test(lead.name + lead.services.join(' '));
   const rating = lead.rating != null ? lead.rating.toFixed(1) : null;
   const reviews = lead.review_count ? lead.review_count.toLocaleString('en-IN') : null;
   const typical = hours[0]?.split(':').slice(1).join(':').trim();
@@ -81,15 +58,15 @@ export function renderSalon(lead: DemoLead & { store_colors?: string | null }, o
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><title>${esc(lead.name)}${city ? ` — ${esc(city)}` : ''}</title>
-<meta name="description" content="${esc(`${lead.name}${city ? `, ${city}` : ''}. ${rating ? `Rated ${rating} by ${reviews} clients on Google.` : ''}`)}">
+<meta name="description" content="${esc(`${lead.name}${city ? `, ${city}` : ''}. ${rating ? `Rated ${rating} by ${reviews} ${p.people} on Google.` : ''}`)}">
 <meta name="theme-color" content="${c.ink}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://images.unsplash.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;1,6..96,500&family=Manrope:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${p.font.google}&display=swap">
 <style>
-:root{--ink:${c.ink};--acc:${c.accent};--soft:${c.soft};--paper:${c.paper};--d:'Bodoni Moda',Didot,Georgia,serif;--b:'Manrope',system-ui,sans-serif;--ease:cubic-bezier(.22,1,.36,1)}
+:root{--ink:${c.ink};--acc:${c.accent};--soft:${c.soft};--paper:${c.paper};--d:${p.font.display};--b:${p.font.body};--dw:${p.font.weight};--ease:cubic-bezier(.22,1,.36,1)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:400 1.05rem/1.65 var(--b);-webkit-font-smoothing:antialiased;overflow-x:hidden;padding-bottom:84px}
 h1,h2,h3,p,ul,figure{margin:0}ul{padding:0;list-style:none}a{color:inherit;text-decoration:none}img{display:block;max-width:100%}
-.serif{font-family:var(--d);font-weight:500;letter-spacing:-.02em}
+.serif{font-family:var(--d);font-weight:var(--dw);letter-spacing:-.02em}
 .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
 .banner{background:var(--ink);color:var(--paper);font:500 .78rem/1.4 var(--b);text-align:center;padding:8px 14px;opacity:.96}
 nav.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;background:color-mix(in srgb,var(--paper) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid color-mix(in srgb,var(--ink) 8%,transparent)}
@@ -105,7 +82,7 @@ nav.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify
 .hero .wrap{display:grid;gap:48px;align-items:center}
 .kicker{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
 .kicker:before{content:"";width:28px;height:1.5px;background:currentColor}
-h1{font-family:var(--d);font-weight:500;font-size:clamp(3rem,10.5vw,6.6rem);line-height:.96;letter-spacing:-.035em;margin-top:18px}
+h1{font-family:var(--d);font-weight:var(--dw);font-size:clamp(3rem,10.5vw,6.6rem);line-height:.96;letter-spacing:-.035em;margin-top:18px}
 h1 em{display:block;font-style:italic;color:var(--acc);font-size:.62em;letter-spacing:-.02em;margin-top:6px}
 .lead{margin-top:22px;max-width:46ch;font-size:1.12rem;color:color-mix(in srgb,var(--ink) 72%,transparent)}
 .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
@@ -132,7 +109,7 @@ h1 em{display:block;font-style:italic;color:var(--acc);font-size:.62em;letter-sp
 .stats div{background:var(--paper);padding:28px 22px}.stats b{display:block;font-family:var(--d);font-size:clamp(2.2rem,6vw,3.4rem);font-weight:500;line-height:1}
 .stats span{color:color-mix(in srgb,var(--ink) 62%,transparent);font-size:.92rem}
 section{padding:96px 0}
-h2{font-family:var(--d);font-weight:500;font-size:clamp(2.3rem,6vw,4rem);line-height:1.02;letter-spacing:-.03em}
+h2{font-family:var(--d);font-weight:var(--dw);font-size:clamp(2.3rem,6vw,4rem);line-height:1.02;letter-spacing:-.03em}
 .intro{max-width:48ch;margin-top:16px;color:color-mix(in srgb,var(--ink) 70%,transparent)}
 /* services */
 .svc{display:grid;gap:16px;margin-top:44px;perspective:1100px}
@@ -141,7 +118,7 @@ h2{font-family:var(--d);font-weight:500;font-size:clamp(2.3rem,6vw,4rem);line-he
 .svc li:hover{transform:rotateX(5deg) rotateY(-7deg) translateY(-6px);box-shadow:0 34px 60px -34px rgba(0,0,0,.4)}.svc li:hover:before{transform:scale(1.35)}
 .svc li>*{position:relative;z-index:1}
 .svc svg{width:44px;height:44px;padding:10px;border-radius:14px;background:var(--ink);color:var(--paper);fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.svc h3{font-family:var(--d);font-weight:500;font-size:1.65rem;margin:22px 0 8px}
+.svc h3{font-family:var(--d);font-weight:var(--dw);font-size:1.65rem;margin:22px 0 8px}
 .svc p{color:color-mix(in srgb,var(--ink) 68%,transparent)}
 .note{margin-top:22px;font-size:.92rem;color:color-mix(in srgb,var(--ink) 60%,transparent)}
 /* experience */
@@ -201,54 +178,52 @@ footer{text-align:center;padding:28px 22px 40px;font-size:.88rem;color:color-mix
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
 </style></head><body>
 <div class="banner" role="note">Free demo designed for ${esc(lead.name)} by ${esc(credit)}</div>
-<nav class="top"><a class="logo" href="#top">${esc(titleA)}${titleB ? `<small>${esc(titleB)}</small>` : ''}</a>${a(book, 'Book now', 'pill solid sm')}</nav>
+<nav class="top"><a class="logo" href="#top">${esc(titleA)}${titleB ? `<small>${esc(titleB)}</small>` : ''}</a>${a(book, esc(p.navCta), 'pill solid sm')}</nav>
 <main id="top">
 <header class="hero"><span class="blob b1"></span><span class="blob b2"></span>
 <div class="wrap">
  <div>
-  <p class="kicker r r1">${unisex ? 'Unisex salon' : 'Salon & beauty'}${city ? ` · ${esc(city)}` : ''}</p>
+  <p class="kicker r r1">${unisex ? 'Unisex salon' : esc(p.kicker)}${city ? ` · ${esc(city)}` : ''}</p>
   <h1 class="r r2">${esc(titleA)}${titleB ? `<em>${esc(titleB)}</em>` : ''}</h1>
-  <p class="lead r r3">Hair, skin and beauty care${unisex ? ' for everyone' : ''}${city ? ` in ${esc(city)}` : ''}. Walk in, relax, and leave feeling your best.</p>
-  <div class="ctas r r4">${a(wa, 'Book on WhatsApp', 'pill acc')}${a(tel, 'Call the salon', 'pill line')}</div>
+  <p class="lead r r3">${esc(p.lead(city))}</p>
+  <div class="ctas r r4">${a(wa, esc(p.primary), 'pill acc')}${a(tel, esc(p.callLabel), 'pill line')}</div>
   ${rating ? `<p class="proof r r5"><b>${rating}</b><span><span class="stars">${stars}</span><br>${reviews} Google reviews</span></p>` : ''}
  </div>
  <div class="stage r r3" aria-hidden="true"><div class="stack">
-  <div class="card c1"><img src="${img(PH.a, 900, 1100)}" alt="" fetchpriority="high"></div>
-  <div class="card c2"><img src="${img(PH.b, 700, 800)}" alt=""></div>
-  <div class="card c3"><img src="${img(PH.f, 700, 700)}" alt=""></div>
-  ${rating ? `<div class="glass"><b>${rating} <span class="stars" style="font-size:.5em">★</span></b>Loved by ${reviews} clients</div>` : ''}
+  <div class="card c1"><img src="${img(PH.hero, 900, 1100)}" alt="" fetchpriority="high"></div>
+  <div class="card c2"><img src="${img(PH.side, 700, 800)}" alt=""></div>
+  <div class="card c3"><img src="${img(PH.small, 700, 700)}" alt=""></div>
+  ${rating ? `<div class="glass"><b>${rating} <span class="stars" style="font-size:.5em">★</span></b>Loved by ${reviews} ${p.people}</div>` : ''}
   ${typical ? `<div class="tag">Open ${daysOpen === 7 ? 'all week' : `${daysOpen} days`} · ${esc(typical)}</div>` : ''}
  </div></div>
 </div></header>
 <div class="marquee" aria-hidden="true"><div class="track">${[...marquee, ...marquee].map((m) => `<span>${esc(m)}</span>`).join('')}</div></div>
 <div class="wrap"><div class="stats in-view">
  ${rating ? `<div><b>${rating}</b><span>Google rating</span></div>` : ''}
- ${reviews ? `<div><b>${reviews}</b><span>Client reviews</span></div>` : ''}
+ ${reviews ? `<div><b>${reviews}</b><span>Google reviews</span></div>` : ''}
  ${daysOpen ? `<div><b>${daysOpen === 7 ? '7 days' : `${daysOpen} days`}</b><span>Open every week</span></div>` : ''}
- <div><b>${unisex ? 'Unisex' : 'All'}</b><span>${unisex ? 'For women and men' : 'Beauty services'}</span></div>
+ ${p.id === 'salon' ? `<div><b>${unisex ? 'Unisex' : 'All'}</b><span>${unisex ? 'For women and men' : 'Beauty services'}</span></div>` : `<div><b>Local</b><span>${city ? `Right here in ${esc(city)}` : 'Right in your area'}</span></div>`}
 </div></div>
 <section><div class="wrap">
  <p class="kicker in-view">What we do</p>
- <h2 class="in-view" style="margin-top:14px">Care that makes<br>you feel new.</h2>
+ <h2 class="in-view" style="margin-top:14px">${p.servicesTitle}</h2>
  <ul class="svc">${services.map((s) => `<li class="in-view"><svg viewBox="0 0 24 24" aria-hidden="true">${s.icon}</svg><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></li>`).join('')}</ul>
- <p class="note in-view">Full menu and prices on WhatsApp — we reply quickly.</p>
+ <p class="note in-view">${esc(p.note)}</p>
 </div></section>
-<div class="exp"><img src="${img(PH.d, 1800, 1300)}" alt="" loading="lazy"><div class="in">
- <p class="kicker" style="color:#fff">The experience</p>
- <h2 style="margin-top:14px">A calm chair. An honest consult. A finish you’ll love.</h2>
- <p>Tell us what you want, and we’ll take care of the rest.</p>
+<div class="exp"><img src="${img(PH.exp, 1800, 1300)}" alt="" loading="lazy"><div class="in">
+ <p class="kicker" style="color:#fff">${esc(p.expKicker)}</p>
+ <h2 style="margin-top:14px">${esc(p.expTitle)}</h2>
+ <p>${esc(p.expText)}</p>
 </div></div>
 <section><div class="wrap">
- <p class="kicker in-view">The look</p><h2 class="in-view" style="margin-top:14px">Inspiration</h2>
- <div class="gal">${[PH.e, PH.b, PH.f, PH.c].map((p) => `<figure class="in-view"><img src="${img(p, 700, 875)}" alt="" loading="lazy"></figure>`).join('')}</div>
+ <p class="kicker in-view">Gallery</p><h2 class="in-view" style="margin-top:14px">${esc(p.galleryTitle)}</h2>
+ <div class="gal">${PH.gallery.map((g) => `<figure class="in-view"><img src="${img(g, 700, 875)}" alt="" loading="lazy"></figure>`).join('')}</div>
  <p class="cap">Sample photos. ${esc(lead.name)}’s own photos will appear here.</p>
 </div></section>
 <section style="padding-top:0"><div class="wrap">
- <p class="kicker in-view">Booking</p><h2 class="in-view" style="margin-top:14px">Book in a minute</h2>
+ <p class="kicker in-view">How it works</p><h2 class="in-view" style="margin-top:14px">${esc(p.stepsTitle)}</h2>
  <ol class="steps" style="padding:0;list-style:none">
-  <li class="in-view"><div><b>Message us on WhatsApp</b><span>Tell us the service you want.</span></div></li>
-  <li class="in-view"><div><b>Pick a time</b><span>We confirm a slot that suits you.</span></div></li>
-  <li class="in-view"><div><b>Walk in and relax</b><span>We’ll be ready for you.</span></div></li>
+  ${p.steps.map(([t, d]) => `<li class="in-view"><div><b>${esc(t)}</b><span>${esc(d)}</span></div></li>`).join('')}
  </ol>
 </div></section>
 <section style="padding-top:0"><div class="wrap">
@@ -263,11 +238,11 @@ footer{text-align:center;padding:28px 22px 40px;font-size:.88rem;color:color-mix
   <div class="map in-view"><iframe title="Map" src="https://www.google.com/maps?q=${encodeURIComponent(`${lead.name}, ${lead.full_address ?? city}`)}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
  </div>
 </div></section>
-<div class="final"><h2>Your next look starts here.</h2><p>${rating ? `Join the ${reviews} clients who rate us ${rating} on Google.` : 'We’d love to see you.'}</p>
-<div class="ctas">${a(wa, 'Book on WhatsApp', 'pill acc')}${a(tel, 'Call now', 'pill line')}${lead.maps_url ? a(lead.maps_url, 'Read our reviews', 'pill line') : ''}</div></div>
+<div class="final"><h2>${esc(p.finalTitle)}</h2><p>${rating ? `Join the ${reviews} ${p.people} who rate us ${rating} on Google.` : 'We’d love to see you.'}</p>
+<div class="ctas">${a(wa, esc(p.primary), 'pill acc')}${a(tel, 'Call now', 'pill line')}${lead.maps_url ? a(lead.maps_url, 'Read our reviews', 'pill line') : ''}</div></div>
 </main>
 <footer><p class="logo" style="color:var(--ink)">${esc(lead.name)}</p>${lead.full_address ? `<p style="margin-top:8px">${esc(lead.full_address)}</p>` : ''}<p style="margin-top:8px">Website demo by ${esc(credit)}</p></footer>
-${wa ? `<a class="float" href="${esc(wa)}" target="_blank" rel="noopener" aria-label="Book on WhatsApp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></a>` : ''}
-<nav class="bar" aria-label="Book">${a(tel, 'Call', 'pill line')}${a(wa, 'Book now', 'pill acc')}</nav>
+${wa ? `<a class="float" href="${esc(wa)}" target="_blank" rel="noopener" aria-label="${esc(p.primary)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></a>` : ''}
+<nav class="bar" aria-label="Contact">${a(tel, 'Call', 'pill line')}${a(wa, esc(p.navCta), 'pill acc')}</nav>
 </body></html>`;
 }
