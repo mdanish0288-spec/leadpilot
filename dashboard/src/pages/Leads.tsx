@@ -64,6 +64,7 @@ export function LeadsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-medium">{l.name}</p>
                     <TypeBadge t={l.lead_type} />
+                    {l.needs_verification && <span className="inline-flex h-6 items-center rounded-full border border-line bg-white px-2.5 text-xs font-medium text-muted">Verify</span>}
                   </div>
                   <p className="mt-0.5 truncate text-sm text-muted">
                     {[l.neighbourhood, l.city, l.country].filter(Boolean).join(', ')} · {l.business_type}
@@ -108,6 +109,12 @@ export function LeadDetailPage() {
       <PageHeader title={lead.name} subtitle={`${lead.business_type} · ${[lead.city, lead.country].filter(Boolean).join(', ')}`}
         action={<div className="flex gap-2"><TypeBadge t={lead.lead_type} /><span className="inline-flex h-6 items-center rounded-full border border-line bg-white px-2.5 text-xs font-medium">{lead.stage}</span></div>} />
 
+      {lead.needs_verification && (
+        <div className="mb-5"><Notice tone="warn">
+          <b>Verify before contacting.</b> This lead came from the free OpenStreetMap backup: no Google rating or reviews, and OpenStreetMap
+          sometimes misses a business's website. Search the name on Google Maps to confirm it has no website before sending a demo.
+        </Notice></div>
+      )}
       <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
         <div className="space-y-5">
           <Card>
@@ -118,7 +125,8 @@ export function LeadDetailPage() {
               <Row icon={<Mail size={16} />} label="Public email">{lead.email ?? 'None published'}</Row>
               <Row icon={<Camera size={16} />} label="Instagram">{lead.instagram ? <a className="text-accent-ink underline" href={lead.instagram} target="_blank" rel="noopener noreferrer">{lead.instagram.replace('https://www.', '')}</a> : 'Not found'}</Row>
               <Row icon={<Globe size={16} />} label="Website">{lead.website ? <a className="break-all text-accent-ink underline" href={lead.website} target="_blank" rel="noopener noreferrer">{lead.website}</a> : 'None'} <span className="text-muted">— {SITE_LABEL[lead.website_status]}</span></Row>
-              {lead.maps_url && <Row icon={<ExternalLink size={16} />} label="Google Maps"><a className="text-accent-ink underline" href={lead.maps_url} target="_blank" rel="noopener noreferrer">Open listing</a></Row>}
+              {lead.maps_url && <Row icon={<ExternalLink size={16} />} label={lead.data_source === 'openstreetmap' ? 'Map' : 'Google Maps'}><a className="text-accent-ink underline" href={lead.maps_url} target="_blank" rel="noopener noreferrer">Open listing</a></Row>}
+              {lead.data_source === 'openstreetmap' && <Row icon={<ExternalLink size={16} />} label="Check on Google"><a className="text-accent-ink underline" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.name} ${lead.city ?? ''}`)}`} target="_blank" rel="noopener noreferrer">Search this business on Google Maps</a></Row>}
             </dl>
             {lead.website_issues.length > 0 && (
               <div className="mt-4 rounded-xl bg-amber-50 p-4 text-[15px] text-amber-900">
@@ -157,7 +165,9 @@ export function LeadDetailPage() {
               <div className="text-right"><p className="text-sm text-muted">Pricing tier</p><p className="text-lg font-semibold">{lead.pricing_tier ? TIER_LABEL[lead.pricing_tier] : '—'}</p></div>
             </div>
             <ul className="mt-5 space-y-3">
-              {lead.score_reasons.map((r) => (
+              {lead.score_reasons.map((r) => r.max === 0 ? (
+                <li key={r.label}><p className="text-xs text-muted">{r.detail}</p></li>
+              ) : (
                 <li key={r.label}>
                   <div className="flex justify-between text-sm"><span className="font-medium">{r.label}</span><span className="tabular-nums text-muted">{r.points}/{r.max}</span></div>
                   <div className="mt-1 h-1.5 rounded-full bg-canvas"><div className="h-1.5 rounded-full bg-accent" style={{ width: `${(r.points / r.max) * 100}%` }} /></div>
@@ -170,6 +180,7 @@ export function LeadDetailPage() {
             <h2 className="mb-2 font-semibold">Coming in later phases</h2>
             <p className="text-sm text-muted">Demo website, chats (email, WhatsApp, Instagram), client requirements, deep photo analysis and AI notes appear here as each phase is built.</p>
             {lead.sheet_row && <p className="mt-3 text-sm text-muted">In Google Sheet: row {lead.sheet_row}</p>}
+            {lead.data_source === 'openstreetmap' && <p className="mt-3 text-xs text-muted">Data © OpenStreetMap contributors (ODbL)</p>}
           </Card>
         </div>
       </div>

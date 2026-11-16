@@ -20,7 +20,7 @@ const places = [
   { id: 'D', displayName: { text: 'Already Known Cafe' }, businessStatus: 'OPERATIONAL' },
 ];
 
-function fakeServices(opts: { quota?: string; sheetLinked?: boolean } = {}) {
+function fakeServices(opts: { quota?: string; sheetLinked?: boolean; googleDown?: boolean } = {}) {
   const calls: string[] = [];
   const leads: Record<string, unknown>[] = [];
   const fake = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -41,7 +41,13 @@ function fakeServices(opts: { quota?: string; sheetLinked?: boolean } = {}) {
     if (url.includes('/rest/v1/leads?website_status=eq.pending&order')) return ok(leads.filter((l) => l.website_status === 'pending').map((l) => ({ ...l, sheet_row: 3 })));
     if (url.includes('/rest/v1/leads?website_status=eq.pending&select=id')) return ok([]);
     if (url.includes('/rest/v1/settings')) return ok([{ google_sheet_id: opts.sheetLinked === false ? '' : '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789' }]);
-    if (url.includes('places.googleapis.com')) return ok({ places });
+    if (url.includes('places.googleapis.com')) return opts.googleDown ? new Response('{"error":{"status":"PERMISSION_DENIED"}}', { status: 403 }) : ok({ places });
+    if (url.includes('nominatim.openstreetmap.org')) return ok([{ boundingbox: ['28.4', '28.9', '76.8', '77.3'] }]);
+    if (url.includes('overpass-api.de')) return ok({ elements: [
+      { type: 'node', id: 11, tags: { amenity: 'cafe', name: 'Lane Cafe', phone: '+91 98000 11111' } },
+      { type: 'node', id: 12, tags: { amenity: 'cafe', name: 'Big Chain', brand: 'Big Chain', phone: '1' } },
+      { type: 'node', id: 13, tags: { amenity: 'cafe', name: 'Nameless Contact' } },
+    ] });
     if (url.includes('oauth2.googleapis.com/token')) return ok({ access_token: 'goog-token' });
     if (url.includes('sheets.googleapis.com') && url.includes(':append')) return ok({ updates: { updatedRange: 'Sheet1!A2:AG4' } });
     if (url.includes('sheets.googleapis.com') && url.includes('batchUpdate')) return ok({});
@@ -90,6 +96,27 @@ describe('search flow', () => {
     expect(body.new_leads).toBe(3);
     expect(body.sheet.ok).toBe(false);
     expect(body.sheet.reason).toMatch(/Settings/);
+  });
+
+  it('switches to the free OpenStreetMap backup when Google refuses, and flags the leads', async () => {
+    const s = fakeServices({ googleDown: true });
+    const res = await run(search, req('/api/search', { business_type: 'cafes', city: 'Delhi', country: 'India', country_code: 'IN' }));
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(res.status).toBe(200);
+    expect(body.source).toBe('openstreetmap');
+    expect(String(body.fallback_reason)).toMatch(/Google Places/);
+    expect(body.found).toBe(3);
+    expect(body.usable).toBe(1); // chain and no-contact entries skipped
+    expect(body.more_available).toBe(false);
+    const saved = s.leads[0] as Record<string, unknown>;
+    expect(saved.needs_verification).toBe(true);
+    expect(saved.data_source).toBe('openstreetmap');
+  });
+
+  it('uses the backup when no Google key is set at all', async () => {
+    fakeServices();
+    const res = await run(search, req('/api/search', { business_type: 'cafes', city: 'Delhi', country: 'India', country_code: 'IN' }), { GOOGLE_SERVICE_ACCOUNT_JSON: serviceAccountJson });
+    expect(((await res.json()) as { source: string }).source).toBe('openstreetmap');
   });
 
   it('refuses without sign-in', async () => {

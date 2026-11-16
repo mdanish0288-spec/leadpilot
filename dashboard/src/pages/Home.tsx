@@ -173,6 +173,13 @@ export function HomePage() {
             ) : phase.result.checking > 0 ? (
               <p className="text-[15px] text-muted">All {phase.result.checking} websites checked.</p>
             ) : null}
+            {phase.result.source === 'openstreetmap' && (
+              <Notice tone="warn">
+                Google search was not available ({phase.result.fallback_reason}), so LeadPilot used the free OpenStreetMap backup.
+                It found {phase.result.found} places and kept the {phase.result.usable} you can contact (phone, email or address); chains were skipped.
+                These have no ratings or reviews, and OpenStreetMap sometimes misses websites — <b>verify each one before contacting</b>.
+              </Notice>
+            )}
             {phase.sheetProblem && <Notice tone="warn">Leads are saved, but the Google Sheet was not updated: {phase.sheetProblem}</Notice>}
             <div className="flex flex-wrap gap-2">
               <Link to={`/leads?search=${phase.result.search_id}`} className="inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-ink">See these leads <ArrowRight size={16} /></Link>

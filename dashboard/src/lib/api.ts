@@ -35,7 +35,7 @@ export interface ParsedCommand {
   language: string; question: string | null; summary: string;
 }
 export interface SheetResult { ok: boolean; rows?: number; reason?: string }
-export interface SearchResult { search_id: string; found: number; new_leads: number; duplicates: number; hot: number; checking: number; more_available: boolean; sheet: SheetResult }
+export interface SearchResult { search_id: string; source: 'google' | 'openstreetmap'; fallback_reason: string | null; usable: number; found: number; new_leads: number; duplicates: number; hot: number; checking: number; more_available: boolean; sheet: SheetResult }
 export interface CheckResult { checked: number; remaining: boolean; sheet: SheetResult }
 export interface Status { ai: boolean; places: boolean; voice: boolean; sheet_key: boolean; sheet_link: boolean; service_account_email: string | null }
 
@@ -70,7 +70,7 @@ export async function runWebsiteChecks(onProgress?: (checkedSoFar: number) => vo
 function previewResponse(path: string): unknown {
   if (path === '/api/status') return { ai: true, places: true, voice: true, sheet_key: false, sheet_link: false, service_account_email: 'leadpilot-sheets@your-project.iam.gserviceaccount.com' };
   if (path === '/api/command') return { status: 'ready', business_type: 'cafes', city: 'Tokyo', country: 'Japan', country_code: 'JP', language: 'hinglish', question: null, summary: 'Cafes in Tokyo, Japan' };
-  if (path === '/api/search') return { search_id: 'preview', found: 20, new_leads: 17, duplicates: 3, hot: 9, checking: 8, more_available: true, sheet: { ok: false, reason: 'Google Sheet link is not set in Settings yet.' } };
+  if (path === '/api/search') return { search_id: 'preview', source: 'google', fallback_reason: null, usable: 20, found: 20, new_leads: 17, duplicates: 3, hot: 9, checking: 8, more_available: true, sheet: { ok: false, reason: 'Google Sheet link is not set in Settings yet.' } };
   if (path === '/api/check-websites') return { checked: 8, remaining: false, sheet: { ok: true, rows: 0 } };
   return {};
 }

@@ -49,6 +49,7 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - Every endpoint first calls `public.use_quota` = owner + 2FA check + hourly rate limit. Server talks to Supabase with the OWNER's JWT so RLS always applies (no service-role key needed yet).
 - Cloudflare free plan: 10 ms CPU and 50 outbound requests per call — keep batches small. Never store `fetch` as an object property (Workers "Illegal invocation"); wrap it in an arrow.
 - Secrets (Cloudflare Pages → Settings → Variables and Secrets, type Secret): `GEMINI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `ELEVENLABS_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_JSON`.
+- Search source: Google Places first; if Google is missing/refuses, automatic free backup = OpenStreetMap (Nominatim + Overpass, no key). Backup leads: phone/email required, chains/canteens skipped, no ratings, `data_source='openstreetmap'`, `needs_verification=true`, attribution "© OpenStreetMap contributors (ODbL)".
 - Website checks run while the dashboard is open (resumed on next open). A Worker cron for fully unattended jobs comes with Phase 4/5.
 
 ## Security model (Phase 1)
@@ -66,6 +67,7 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - Never buy a domain or spend money without the owner's approval.
 - Never add unverified links, prices, phone numbers or addresses to a website.
 - Never auto-send first messages on WhatsApp or Instagram.
+- Never contact a lead with `needs_verification = true` (OpenStreetMap backup data) until the owner has confirmed on Google Maps that it has no website.
 - STOP AND ALERT THE OWNER (no auto-reply) when: the client is angry or complaining, asks something not in settings, mentions legal issues or contracts, wants a big custom project, or the AI is not sure. Alert by WhatsApp + red dashboard badge, with a suggested reply approved by one tap.
 - Before sending any message, run an automatic check: correct business name, price, currency, payment details, language, link. If anything fails, don't send; alert the owner.
 - Log every message sent and received.

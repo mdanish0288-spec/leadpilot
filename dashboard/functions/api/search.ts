@@ -6,6 +6,7 @@ import type { Env } from '../../server/env';
 import { Db, bearer, errorResponse, HttpError, json, requireOwner } from '../../server/http';
 import { buildPlacesQuery } from '../../server/command';
 import { placesToLeads, searchPlaces } from '../../server/places';
+import { osmToLeads, searchOsm } from '../../server/osm';
 import { appendToSheet } from '../../server/sync';
 import type { SheetLead } from '../../server/sheet';
 
@@ -17,7 +18,6 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const db = new Db(bearer(request));
     await requireOwner(db, 'search', 30);
-    if (!env.GOOGLE_PLACES_API_KEY) throw new HttpError(503, 'Google Places key is not set up yet.', 'not_configured');
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
     let search: SearchRow;
@@ -42,15 +42,37 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       }]);
     }
 
-    let page;
+    // Google first. If Google is not set up or refuses (billing, key, quota, outage), use the free OpenStreetMap backup.
+    const ctx = { businessType: search.business_type, city: search.city, country: search.country, countryCode: search.country_code, searchId: search.id };
+    let source: 'google' | 'openstreetmap' = 'google';
+    let fallbackReason: string | null = null;
+    let found = 0;
+    let nextPageToken: string | null = null;
+    let rows: Record<string, unknown>[];
     try {
-      page = await searchPlaces(env.GOOGLE_PLACES_API_KEY, search.query, search.country_code, pageToken);
-    } catch (e) {
-      await db.update('searches', `id=eq.${search.id}`, { status: 'failed', error: e instanceof Error ? e.message : 'Places failed' });
-      throw e;
+      if (!env.GOOGLE_PLACES_API_KEY) throw new HttpError(503, 'Google Places key is not set up.', 'not_configured');
+      const page = await searchPlaces(env.GOOGLE_PLACES_API_KEY, search.query, search.country_code, pageToken);
+      found = page.places.length;
+      nextPageToken = page.nextPageToken;
+      rows = placesToLeads(page.places, ctx);
+    } catch (googleError) {
+      if (pageToken) { // "Find 20 more" only exists for Google searches
+        await db.update('searches', `id=eq.${search.id}`, { error: googleError instanceof Error ? googleError.message : 'Google failed' });
+        throw googleError;
+      }
+      source = 'openstreetmap';
+      fallbackReason = googleError instanceof Error ? googleError.message : 'Google Places failed';
+      try {
+        const elements = await searchOsm(search.business_type, search.city, search.country);
+        found = elements.length;
+        rows = osmToLeads(elements, ctx);
+      } catch (osmError) {
+        const msg = `Google: ${fallbackReason} Backup: ${osmError instanceof Error ? osmError.message : 'OpenStreetMap failed'}`;
+        await db.update('searches', `id=eq.${search.id}`, { status: 'failed', source, fallback_reason: fallbackReason, error: msg });
+        throw new HttpError(502, `Search failed. ${msg}`, 'search_failed');
+      }
     }
 
-    const rows = placesToLeads(page.places, { businessType: search.business_type, city: search.city, country: search.country, countryCode: search.country_code, searchId: search.id });
     // Duplicates (already found in an earlier search) are skipped by the unique place_id rule.
     const inserted = rows.length
       ? await db.insert<SheetLead & { id: string; lead_type: string }>('leads', rows, '?on_conflict=place_id&columns=' + Object.keys(rows[0]).join(','), true)
@@ -58,20 +80,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const duplicates = rows.length - inserted.length;
 
     await db.update('searches', `id=eq.${search.id}`, {
-      status: 'done', results_found: search.results_found + page.places.length, new_leads: search.new_leads + inserted.length,
-      duplicates: search.duplicates + duplicates, next_page_token: page.nextPageToken, error: null,
+      status: 'done', source, fallback_reason: fallbackReason, results_found: search.results_found + found, new_leads: search.new_leads + inserted.length,
+      duplicates: search.duplicates + duplicates, next_page_token: nextPageToken, error: null,
     });
 
     const sheet = await appendToSheet(db, env, inserted);
 
     return json({
       search_id: search.id,
-      found: page.places.length,
+      source,
+      fallback_reason: fallbackReason,
+      found,
+      usable: rows.length,
       new_leads: inserted.length,
       duplicates,
       hot: inserted.filter((l) => l.lead_type === 'hot').length,
       checking: inserted.filter((l) => l.lead_type === 'pending').length,
-      more_available: !!page.nextPageToken,
+      more_available: !!nextPageToken,
       sheet,
     });
   } catch (e) {
