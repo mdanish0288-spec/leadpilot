@@ -6,7 +6,7 @@
   Permissions-Policy: camera=(), geolocation=(), microphone=(self)
   X-Robots-Tag: noindex, nofollow
   Cross-Origin-Opener-Policy: same-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://hqmhqrbmpxrksvnqmtlg.supabase.co; font-src 'self'; connect-src 'self' https://hqmhqrbmpxrksvnqmtlg.supabase.co wss://hqmhqrbmpxrksvnqmtlg.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://hqmhqrbmpxrksvnqmtlg.supabase.co https://lh3.googleusercontent.com; font-src 'self'; connect-src 'self' https://hqmhqrbmpxrksvnqmtlg.supabase.co wss://hqmhqrbmpxrksvnqmtlg.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
 
 # Demo websites set their own headers (see functions/d/[slug].ts)
 /d/*

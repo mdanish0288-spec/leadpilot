@@ -84,10 +84,10 @@ export interface Lead {
   pricing_tier: 'standard' | 'premium' | 'luxury' | null; stage: string; photo_count: number;
   top_reviews: { rating: number | null; text: string; author: string | null; when: string | null }[];
   sheet_row: number | null; notes: string | null; data_source: 'google' | 'openstreetmap' | 'import'; needs_verification: boolean; place_id?: string; phone_key?: string | null;
-  services?: string[]; store_colors?: string | null; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null;
+  services?: string[]; store_colors?: string | null; photo_refs?: { url?: string; name?: string }[]; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null;
 }
 
-const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,store_colors,demo_slug,demo_link,demo_theme,contacted_by';
+const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,store_colors,photo_refs,demo_slug,demo_link,demo_theme,contacted_by';
 
 export async function loadLeads(): Promise<Lead[]> {
   if (PREVIEW) return PREVIEW_LEADS;
@@ -209,12 +209,36 @@ export async function leadsCsv(): Promise<string> {
 
 // ---------------- Demos and messages (Phases 3–4) ----------------
 import { renderDemo, slugFor } from '../../server/demo';
+import { paletteFromPixels } from '../../server/palette';
 
 export const demoUrl = (slug: string) => `${location.origin}/d/${slug}`;
 
 /** Builds the demo from the lead's real data, publishes it, and moves the lead to "Demo Ready". */
+/** Reads the main colours from the business's one photo (only to colour the demo; the photo is never shown). */
+export async function coloursFromPhoto(url: string): Promise<string | null> {
+  const big = url.replace(/=w\d+-h\d+[^/]*$/, '=w400-h400-k-no');
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = big;
+  try { await img.decode(); } catch { return null; }
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, 64, 64);
+  try {
+    const p = paletteFromPixels(ctx.getImageData(0, 0, 64, 64).data);
+    return `${p.ink},${p.accent},${p.paper}`;
+  } catch { return null; }
+}
+
 export async function publishDemo(lead: Lead): Promise<Lead> {
   const s = await loadSettings();
+  const photo = lead.photo_refs?.find((p) => p.url)?.url;
+  if (!lead.store_colors && photo && !PREVIEW) {
+    const colours = await coloursFromPhoto(photo);
+    if (colours) { await saveStoreColors(lead.id, colours); lead = { ...lead, store_colors: colours }; }
+  }
   if (!s.owner_name.trim()) throw new Error('Add your name in Settings first — it appears on every demo.');
   const slug = lead.demo_slug ?? slugFor(lead.name, lead.id);
   const { html, theme } = renderDemo({ ...lead, services: lead.services ?? [], phone_intl: lead.phone_intl, opening_hours: lead.opening_hours }, { name: s.owner_name, businessName: s.business_name });

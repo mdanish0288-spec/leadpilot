@@ -43,7 +43,7 @@ export function LeadsPage() {
   const [downloading, setDownloading] = useState(false);
   const [bulk, setBulk] = useState<{ done: number; total: number; error: string } | null>(null);
   async function makeAllDemos() {
-    const todo = (leads ?? []).filter((l) => l.lead_type === 'hot' && !l.demo_link && l.stage !== 'Do Not Contact');
+    const todo = (leads ?? []).filter((l) => l.lead_type === 'hot' && l.stage !== 'Do Not Contact');
     setBulk({ done: 0, total: todo.length, error: '' });
     const updated = new Map<string, Lead>();
     for (let i = 0; i < todo.length; i++) {
@@ -71,11 +71,11 @@ export function LeadsPage() {
       <PageHeader title="Leads" subtitle="Every business LeadPilot finds, from first contact to delivery."
         action={<div className="flex flex-wrap gap-2">
           <Link to="/leads/import" className="inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-ink"><Upload size={16} /> Import leads</Link>
-          <Button variant="secondary" onClick={makeAllDemos} disabled={!!bulk && bulk.done < bulk.total && !bulk.error || !(leads ?? []).some((l) => l.lead_type === 'hot' && !l.demo_link)}>Make demos for Hot leads</Button>
+          <Button variant="secondary" onClick={makeAllDemos} disabled={!!bulk && bulk.done < bulk.total && !bulk.error || !(leads ?? []).some((l) => l.lead_type === 'hot')}>Make / update demos for Hot leads</Button>
           <Button variant="secondary" onClick={download} disabled={downloading || !leads?.length}><Download size={16} /> {downloading ? 'Preparing…' : 'Download CSV'}</Button>
         </div>} />
       {error && <Notice tone="danger">{error}</Notice>}
-      {bulk && <div className="mb-4"><Notice tone={bulk.error ? 'danger' : bulk.done === bulk.total ? 'ok' : 'info'}>{bulk.error ? `Stopped: ${bulk.error}` : bulk.done === bulk.total ? `Done: ${bulk.total} demo websites built. Open each lead to check its demo and send it.` : `Building demo websites… ${bulk.done} of ${bulk.total}`}</Notice></div>}
+      {bulk && <div className="mb-4"><Notice tone={bulk.error ? 'danger' : bulk.done === bulk.total ? 'ok' : 'info'}>{bulk.error ? `Stopped: ${bulk.error}` : bulk.done === bulk.total ? `Done: ${bulk.total} demo websites built in each salon's own colours. Open each lead to check its demo and send it.` : `Building demo websites… ${bulk.done} of ${bulk.total}`}</Notice></div>}
 
       <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         <Chip on={!stage} onClick={() => setFilter('stage', null)}>All <span className="opacity-70">{leads?.length ?? 0}</span></Chip>
