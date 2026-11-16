@@ -31,10 +31,10 @@ export function parseCsv(text: string): string[][] {
   return rows;
 }
 
-export type Field = 'name' | 'type' | 'address' | 'city' | 'country' | 'phone' | 'whatsapp' | 'email' | 'website' | 'instagram' | 'rating' | 'reviews' | 'maps' | 'notes';
+export type Field = 'name' | 'hours' | 'type' | 'address' | 'city' | 'country' | 'phone' | 'whatsapp' | 'email' | 'website' | 'instagram' | 'rating' | 'reviews' | 'maps' | 'notes';
 export const FIELD_LABEL: Record<Field, string> = {
   name: 'Business name', type: 'Business type', address: 'Address', city: 'City', country: 'Country', phone: 'Phone', whatsapp: 'WhatsApp',
-  email: 'Email', website: 'Website', instagram: 'Instagram', rating: 'Rating', reviews: 'Review count', maps: 'Google Maps link', notes: 'Notes',
+  hours: 'Opening hours', email: 'Email', website: 'Website', instagram: 'Instagram', rating: 'Rating', reviews: 'Review count', maps: 'Google Maps link', notes: 'Notes',
 };
 
 // Header words → field. Checked in order, so more specific patterns come first.
@@ -51,6 +51,7 @@ const HEADER_RULES: [Field, RegExp][] = [
   ['city', /city|town|area|locality/],
   ['country', /country/],
   ['address', /address|street|location/],
+  ['hours', /hour|timing|open/],
   ['notes', /note|comment|remark/],
   ['name', /name|business|shop|company|store|title/],
 ];
@@ -93,6 +94,7 @@ export interface ImportDefaults { businessType: string; city: string; country: s
 export interface ImportRow {
   name: string; type: string | null; address: string | null; city: string | null; country: string | null; phone: string | null; whatsapp: string | null;
   email: string | null; website: string | null; instagram: string | null; rating: number | null; reviews: number | null; maps: string | null; notes: string | null;
+  hours?: string | null;
 }
 
 // Empty-looking cells, including the locked placeholders some export tools write (e.g. \"*** Visible after upgrade ***\").
@@ -139,7 +141,7 @@ export function readRows(table: string[][], map: Partial<Record<Field, number>>)
     seen.add(key);
     rows.push({
       name, type: get(r, 'type'), address: get(r, 'address'), city: get(r, 'city'), country: get(r, 'country'), phone, whatsapp, email: email?.toLowerCase() ?? null,
-      website: get(r, 'website'), instagram, rating: parseRating(get(r, 'rating')), reviews: parseCount(get(r, 'reviews')), maps: get(r, 'maps'), notes: get(r, 'notes'),
+      website: get(r, 'website'), instagram, rating: parseRating(get(r, 'rating')), reviews: parseCount(get(r, 'reviews')), maps: get(r, 'maps'), notes: get(r, 'notes'), hours: get(r, 'hours'),
     });
   });
   return { rows, skipped };
@@ -157,6 +159,18 @@ export function toInternational(phone: string | null, countryCode: string): stri
     if (/^[1-5]\d{7,9}$/.test(local)) return `+91 ${local}`;
   }
   return null;
+}
+
+/** "Monday:[10 am–9 pm], Tuesday:[...]" → ["Monday: 10 am–9 pm", …]. Other formats are kept as written. */
+export function parseHours(v: string | null | undefined): string[] {
+  if (!v) return [];
+  const parts = [...v.matchAll(/([A-Za-z]+)\s*:\s*\[([^\]]*)\]/g)].map((m) => `${m[1]}: ${m[2].trim() || 'Closed'}`);
+  return parts.length ? parts : [v.trim()];
+}
+
+/** "Beauty Parlour,Barber shop,…" → ["Beauty Parlour", "Barber shop", …] (max 12). */
+export function parseServices(v: string | null | undefined): string[] {
+  return (v ?? '').split(',').map((x) => x.trim()).filter(Boolean).slice(0, 12);
 }
 
 /** djb2 hash → stable id for a business without a Google place id. */
@@ -200,6 +214,8 @@ export function importRowToLead(r: ImportRow, d: ImportDefaults, hasWebsiteColum
     score_reasons: [...reasons, { label: 'Data source', points: 0, max: 0, detail: 'Imported from your sheet' }],
     pricing_tier: tierFromScore(score),
     notes: r.notes,
+    services: parseServices(r.type),
+    opening_hours: r.hours ? { weekdayDescriptions: parseHours(r.hours) } : null,
     data_source: 'import' as const,
     needs_verification: !hasWebsiteColumn && site.status === 'none',
   };

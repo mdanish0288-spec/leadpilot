@@ -51,6 +51,7 @@ export const api = {
   search: (body: Record<string, unknown>) => call<SearchResult>('/api/search', { method: 'POST', body: JSON.stringify(body) }),
   fetchSheet: (url: string) => call<{ csv: string }>('/api/fetch-sheet', { method: 'POST', body: JSON.stringify({ url }) }),
   importRows: (body: Record<string, unknown>) => call<ImportResult>('/api/import', { method: 'POST', body: JSON.stringify(body) }),
+  suggestReply: (lead_id: string, client_message: string) => call<{ reply: string; needs_owner: boolean; reason: string; warnings: string[] }>('/api/suggest-reply', { method: 'POST', body: JSON.stringify({ lead_id, client_message }) }),
   checkWebsites: () => call<CheckResult>('/api/check-websites', { method: 'POST', body: '{}' }),
   syncSheet: () => call<{ added: number; remaining: boolean; sheet: SheetResult }>('/api/sync-sheet', { method: 'POST', body: '{}' }),
 };
@@ -76,6 +77,7 @@ function previewResponse(path: string): unknown {
   if (path === '/api/search') return { search_id: 'preview', source: 'google', fallback_reason: null, usable: 20, found: 20, new_leads: 17, duplicates: 3, hot: 9, checking: 8, more_available: true, sheet: { ok: false, reason: 'Google Sheet link is not set in Settings yet.' } };
   if (path === '/api/fetch-sheet') return { csv: ['Business Name,Phone,Website,Rating,Reviews,Address', 'Sharma Tea Stall,+91 98390 11111,,4.6,320,Hazratganj', 'Royal Bakery,+91 98390 22222,royalbakery.in,4.2,85,Aminabad', 'No Phone Cafe,,,4.1,12,Gomti Nagar', 'Green Leaf Cafe,+91 98390 33333,,4.8,1200,Indira Nagar'].join(String.fromCharCode(10)) };
   if (path === '/api/import') return { received: 3, imported: 3, duplicates: 0, blocked: [], hot: 2, checking: 1, sheet: { ok: false, reason: 'Google Sheet link is not set in Settings yet.' } };
+  if (path === '/api/suggest-reply') return { reply: 'Thank you so much! Please send me 5–10 photos of your salon and tell me what you would like to change.', needs_owner: false, reason: 'Client likes the demo and wants changes', warnings: [] };
   if (path === '/api/check-websites') return { checked: 8, remaining: false, sheet: { ok: true, rows: 0 } };
   return {};
 }

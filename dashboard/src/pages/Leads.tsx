@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { AlertTriangle, ArrowLeft, Camera, Download, ExternalLink, Flame, Globe, Mail, MapPin, Phone, Star, Sun, Upload, Users } from 'lucide-react';
 import { Button, Card, EmptyState, Notice, PageHeader, Textarea, cx } from '../components/ui';
-import { leadsCsv, loadLead, loadLeads, reportMistake, type Lead } from '../lib/data';
+import { leadsCsv, loadLead, loadLeads, publishDemo, reportMistake, type Lead } from '../lib/data';
+import { ConversationCard, DemoCard, SendCard } from '../components/LeadActions';
 import { rankLeads } from '../../server/importer';
 import { REASON_TEXT, type FeedbackReason } from '../../server/lessons';
 import { LEAD_STAGES } from '../lib/types';
@@ -40,6 +41,18 @@ export function LeadsPage() {
   const filtered = (leads ?? []).filter((l) => (!stage || l.stage === stage) && (!type || l.lead_type === type));
   const shown = sort === 'best' ? rankLeads(filtered) : filtered;
   const [downloading, setDownloading] = useState(false);
+  const [bulk, setBulk] = useState<{ done: number; total: number; error: string } | null>(null);
+  async function makeAllDemos() {
+    const todo = (leads ?? []).filter((l) => l.lead_type === 'hot' && !l.demo_link && l.stage !== 'Do Not Contact');
+    setBulk({ done: 0, total: todo.length, error: '' });
+    const updated = new Map<string, Lead>();
+    for (let i = 0; i < todo.length; i++) {
+      try { updated.set(todo[i].id, await publishDemo(todo[i])); }
+      catch (e) { setBulk({ done: i, total: todo.length, error: `${todo[i].name}: ${(e as Error).message}` }); break; }
+      setBulk((b) => (b ? { ...b, done: i + 1 } : b));
+    }
+    setLeads((ls) => ls?.map((l) => updated.get(l.id) ?? l) ?? null);
+  }
   async function download() {
     setDownloading(true);
     try {
@@ -58,9 +71,11 @@ export function LeadsPage() {
       <PageHeader title="Leads" subtitle="Every business LeadPilot finds, from first contact to delivery."
         action={<div className="flex flex-wrap gap-2">
           <Link to="/leads/import" className="inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-4 text-[15px] font-medium text-white hover:bg-accent-ink"><Upload size={16} /> Import leads</Link>
+          <Button variant="secondary" onClick={makeAllDemos} disabled={!!bulk && bulk.done < bulk.total && !bulk.error || !(leads ?? []).some((l) => l.lead_type === 'hot' && !l.demo_link)}>Make demos for Hot leads</Button>
           <Button variant="secondary" onClick={download} disabled={downloading || !leads?.length}><Download size={16} /> {downloading ? 'Preparing…' : 'Download CSV'}</Button>
         </div>} />
       {error && <Notice tone="danger">{error}</Notice>}
+      {bulk && <div className="mb-4"><Notice tone={bulk.error ? 'danger' : bulk.done === bulk.total ? 'ok' : 'info'}>{bulk.error ? `Stopped: ${bulk.error}` : bulk.done === bulk.total ? `Done: ${bulk.total} demo websites built. Open each lead to check its demo and send it.` : `Building demo websites… ${bulk.done} of ${bulk.total}`}</Notice></div>}
 
       <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         <Chip on={!stage} onClick={() => setFilter('stage', null)}>All <span className="opacity-70">{leads?.length ?? 0}</span></Chip>
@@ -87,6 +102,7 @@ export function LeadsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="truncate font-medium">{l.name}</p>
                     <TypeBadge t={l.lead_type} />
+                    {l.demo_link && <span className="inline-flex h-6 items-center rounded-full bg-ok-soft px-2.5 text-xs font-medium text-ok">Demo ready</span>}
                     {l.needs_verification && <span className="inline-flex h-6 items-center rounded-full border border-line bg-white px-2.5 text-xs font-medium text-muted">Verify</span>}
                   </div>
                   <p className="mt-0.5 truncate text-sm text-muted">
@@ -140,6 +156,9 @@ export function LeadDetailPage() {
       )}
       <div className="grid gap-5 lg:grid-cols-[1fr_340px]">
         <div className="space-y-5">
+          <DemoCard lead={lead} onChange={setLead} />
+          <SendCard lead={lead} onChange={setLead} />
+          <ConversationCard lead={lead} onChange={setLead} />
           <Card>
             <h2 className="mb-4 font-semibold">Business details</h2>
             <dl className="grid gap-3 text-[15px]">

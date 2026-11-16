@@ -84,9 +84,10 @@ export interface Lead {
   pricing_tier: 'standard' | 'premium' | 'luxury' | null; stage: string; photo_count: number;
   top_reviews: { rating: number | null; text: string; author: string | null; when: string | null }[];
   sheet_row: number | null; notes: string | null; data_source: 'google' | 'openstreetmap' | 'import'; needs_verification: boolean; place_id?: string; phone_key?: string | null;
+  services?: string[]; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null;
 }
 
-const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key';
+const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,demo_slug,demo_link,demo_theme,contacted_by';
 
 export async function loadLeads(): Promise<Lead[]> {
   if (PREVIEW) return PREVIEW_LEADS;
@@ -204,4 +205,45 @@ export async function leadsCsv(): Promise<string> {
   return [[...SHEET_COLUMNS], ...rows.map((r) => leadToRow({ ...r, delivery_links: r.delivery_links ?? {}, advance_status: r.advance_status ?? '', final_payment_status: r.final_payment_status ?? '' }))]
     .map((row) => row.map((c) => esc(String(c))).join(','))
     .join('\r\n');
+}
+
+// ---------------- Demos and messages (Phases 3–4) ----------------
+import { renderDemo, slugFor } from '../../server/demo';
+
+export const demoUrl = (slug: string) => `${location.origin}/d/${slug}`;
+
+/** Builds the demo from the lead's real data, publishes it, and moves the lead to "Demo Ready". */
+export async function publishDemo(lead: Lead): Promise<Lead> {
+  const s = await loadSettings();
+  if (!s.owner_name.trim()) throw new Error('Add your name in Settings first — it appears on every demo.');
+  const slug = lead.demo_slug ?? slugFor(lead.name, lead.id);
+  const { html, theme } = renderDemo({ ...lead, services: lead.services ?? [], phone_intl: lead.phone_intl, opening_hours: lead.opening_hours }, { name: s.owner_name, businessName: s.business_name });
+  const link = demoUrl(slug);
+  if (PREVIEW) return { ...lead, demo_slug: slug, demo_link: link, demo_theme: theme, stage: 'Demo Ready' };
+  const { error: e1 } = await supabase.storage.from('demos').upload(`${slug}.html`, new Blob([html], { type: 'text/html' }), { upsert: true, contentType: 'text/html', cacheControl: '60' });
+  if (e1) throw new Error(`Could not publish the demo: ${e1.message}`);
+  const stage = lead.stage === 'New' ? 'Demo Ready' : lead.stage;
+  const { error: e2 } = await supabase.from('leads').update({ demo_slug: slug, demo_link: link, demo_theme: theme, stage }).eq('id', lead.id);
+  if (e2) throw new Error(`Demo published, but the lead was not updated: ${e2.message}`);
+  return { ...lead, demo_slug: slug, demo_link: link, demo_theme: theme, stage };
+}
+
+export interface Message { id: string; created_at: string; channel: string; direction: 'in' | 'out'; body: string }
+export async function loadMessages(leadId: string): Promise<Message[]> {
+  if (PREVIEW) return [];
+  const { data, error } = await supabase.from('messages').select('id,created_at,channel,direction,body').eq('lead_id', leadId).order('created_at');
+  if (error) throw new Error(error.message);
+  return data as Message[];
+}
+
+/** Logs a message the owner is sending (every message is logged), and moves a first contact to "Contacted". */
+export async function logOutgoing(lead: Lead, channel: 'whatsapp' | 'email' | 'instagram', body: string, checks: unknown, firstContact: boolean): Promise<void> {
+  if (PREVIEW) return;
+  const { error } = await supabase.from('messages').insert({ lead_id: lead.id, channel, direction: 'out', body, checks });
+  if (error) throw new Error(error.message);
+  if (firstContact && ['New', 'Demo Ready'].includes(lead.stage)) {
+    await supabase.from('leads').update({ stage: 'Contacted', contacted_by: channel }).eq('id', lead.id);
+  } else if (!firstContact && ['Contacted', 'Demo Ready'].includes(lead.stage)) {
+    await supabase.from('leads').update({ stage: 'Replied' }).eq('id', lead.id);
+  }
 }

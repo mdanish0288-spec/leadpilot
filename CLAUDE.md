@@ -52,6 +52,9 @@ Client-site JavaScript stays minimal: vanilla Motion (`animate`, `inView`) + Len
 - Search source: Google Places first; if Google is missing/refuses, automatic free backup = OpenStreetMap (Nominatim + Overpass, no key). Backup leads: phone/email required, chains/canteens skipped, no ratings, `data_source='openstreetmap'`, `needs_verification=true`, attribution "© OpenStreetMap contributors (ODbL)".
 - Import: owner's own Google Sheet (link shared "Anyone with the link", read via /api/fetch-sheet) or CSV. `server/importer.ts` detects columns, skips rows with no name or no contact, dedupes by phone (last 10 digits, `leads.phone_key`) and place id. No Website column → `needs_verification`.
 - Learning loop: "Report a mistake" on a lead → `lead_feedback` + `lessons` (skip_place / skip_name for chains / skip_phone). Every search and import runs `applyLessons` before saving. Owner can undo lessons in Settings.
+- Demos (Phase 3): `server/demo.ts` renders one static HTML page from real lead data only (no JS, everything escaped, stock photos labelled "Sample photos"). Published to Supabase Storage bucket `demos`, served sandboxed at `/d/<slug>` by `functions/d/[slug].ts` (CSP script-src 'none' + sandbox).
+- Outreach (Phase 4): `server/outreach.ts` writes first messages and runs `checkFirstMessage` (name, link, real sender, no price/payment, no fake urgency, STOP line for email). Owner sends with one tap (wa.me / mailto / Instagram copy). Every message logged in `messages`.
+- Replies: owner pastes the reply; `/api/suggest-reply` (Gemini) drafts an answer; `server/reply.ts` blocks wrong amounts, payment details, urgency. No WhatsApp Business API yet (free path).
 - Website checks run while the dashboard is open (resumed on next open). A Worker cron for fully unattended jobs comes with Phase 4/5.
 
 ## Security model (Phase 1)
