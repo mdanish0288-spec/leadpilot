@@ -68,8 +68,14 @@ export function checkFirstMessage(text: string, l: OutreachLead, s: Sender, demo
 
 export const allPass = (c: Check[]) => c.every((x) => x.ok);
 
-export function whatsappLink(phoneIntl: string, text: string): string {
-  return `https://wa.me/${phoneIntl.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+export type WaMode = 'phone' | 'app' | 'web';
+/** phone: wa.me (works everywhere) · app: opens the WhatsApp desktop app straight in the chat · web: WhatsApp Web in the browser. */
+export function whatsappLink(phoneIntl: string, text: string, mode: WaMode = 'phone'): string {
+  const n = phoneIntl.replace(/\D/g, '');
+  const t = encodeURIComponent(text);
+  if (mode === 'app') return `whatsapp://send?phone=${n}&text=${t}`;
+  if (mode === 'web') return `https://web.whatsapp.com/send?phone=${n}&text=${t}`;
+  return `https://wa.me/${n}?text=${t}`;
 }
 export function mailtoLink(to: string, subject: string, body: string): string {
   return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

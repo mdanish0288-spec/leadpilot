@@ -3,7 +3,28 @@ import { CheckCircle2, Copy, ExternalLink, Globe, Loader2, Mail, MessageCircle, 
 import { Button, Card, Notice, Textarea, cx } from './ui';
 import { api } from '../lib/api';
 import { loadMessages, loadSettings, logOutgoing, publishDemo, saveStoreColors, type Lead, type Message } from '../lib/data';
-import { allPass, checkFirstMessage, emailMessage, mailtoLink, whatsappLink, whatsappMessage, type Sender } from '../../server/outreach';
+import { allPass, checkFirstMessage, emailMessage, mailtoLink, whatsappLink, whatsappMessage, type Sender, type WaMode } from '../../server/outreach';
+
+const isPhone = () => /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+function useWaMode(): [WaMode, (m: WaMode) => void] {
+  const [mode, setMode] = useState<WaMode>(() => {
+    if (isPhone()) return 'phone';
+    try { return (localStorage.getItem('lp-wa-mode') as WaMode) || 'app'; } catch { return 'app'; }
+  });
+  return [mode, (m) => { setMode(m); try { localStorage.setItem('lp-wa-mode', m); } catch { /* ignore */ } }];
+}
+function WaModePicker({ mode, setMode }: { mode: WaMode; setMode: (m: WaMode) => void }) {
+  if (isPhone()) return null;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+      On this computer open:
+      {([['app', 'WhatsApp app'], ['web', 'WhatsApp Web']] as const).map(([m, label]) => (
+        <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}
+          className={cx('rounded-full border px-3 py-1', mode === m ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line bg-white')}>{label}</button>
+      ))}
+    </div>
+  );
+}
 
 /** Phase 3: build / rebuild / open the demo website. */
 export function DemoCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) => void }) {
@@ -64,6 +85,7 @@ export function SendCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) =
   const [text, setText] = useState('');
   const [channel, setChannel] = useState<'whatsapp' | 'email' | 'instagram'>(lead.phone_intl ? 'whatsapp' : lead.email ? 'email' : 'instagram');
   const [msg, setMsg] = useState('');
+  const [waMode, setWaMode] = useWaMode();
   useEffect(() => { loadSettings().then((s) => setSender({ name: s.owner_name, businessName: s.business_name, whatsapp: s.whatsapp_number, email: s.business_email })).catch(() => {}); }, []);
   const ol = { name: lead.name, rating: lead.rating, review_count: lead.review_count, website_status: lead.website_status, email: lead.email, phone_intl: lead.phone_intl, instagram: lead.instagram };
   const email = useMemo(() => (sender && lead.demo_link ? emailMessage(ol, sender, lead.demo_link) : null), [sender, lead.demo_link]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -80,7 +102,7 @@ export function SendCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) =
 
   async function send() {
     if (!ok || blocked) return;
-    if (channel === 'whatsapp') window.open(whatsappLink(lead.phone_intl!, text), '_blank', 'noopener');
+    if (channel === 'whatsapp') { const url = whatsappLink(lead.phone_intl!, text, waMode); if (waMode === 'app') window.location.href = url; else window.open(url, '_blank', 'noopener'); }
     if (channel === 'email') window.open(mailtoLink(lead.email!, email!.subject, text), '_self');
     if (channel === 'instagram') { await navigator.clipboard?.writeText(text); window.open(lead.instagram!, '_blank', 'noopener'); }
     await logOutgoing(lead, channel, text, checks, true);
@@ -110,6 +132,7 @@ export function SendCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) =
         {channel === 'whatsapp' ? <MessageCircle size={16} /> : channel === 'email' ? <Mail size={16} /> : <Copy size={16} />}
         {channel === 'whatsapp' ? 'Open WhatsApp with this message' : channel === 'email' ? 'Open email with this message' : 'Copy and open Instagram'}
       </Button>
+      {channel === 'whatsapp' && <WaModePicker mode={waMode} setMode={setWaMode} />}
       <p className="mt-2 text-xs text-muted">You press Send yourself — first messages are never sent automatically.</p>
       {msg && <div className="mt-3"><Notice tone="ok">{msg}</Notice></div>}
     </Card>
@@ -123,6 +146,7 @@ export function ConversationCard({ lead, onChange }: { lead: Lead; onChange: (l:
   const [draft, setDraft] = useState<{ reply: string; needs_owner: boolean; reason: string; warnings: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [waMode, setWaMode] = useWaMode();
   const refresh = () => loadMessages(lead.id).then(setMessages).catch(() => {});
   useEffect(() => { refresh(); }, [lead.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -137,7 +161,8 @@ export function ConversationCard({ lead, onChange }: { lead: Lead; onChange: (l:
   }
   async function sendDraft() {
     if (!draft || !lead.phone_intl) return;
-    window.open(whatsappLink(lead.phone_intl, draft.reply), '_blank', 'noopener');
+    const url = whatsappLink(lead.phone_intl, draft.reply, waMode);
+    if (waMode === 'app') window.location.href = url; else window.open(url, '_blank', 'noopener');
     await logOutgoing(lead, 'whatsapp', draft.reply, draft.warnings, false);
     setDraft(null);
     refresh();
@@ -164,6 +189,7 @@ export function ConversationCard({ lead, onChange }: { lead: Lead; onChange: (l:
           {!draft.needs_owner && <p className="text-sm text-muted">{draft.reason}</p>}
           <Textarea aria-label="Suggested answer" value={draft.reply} onChange={(e) => setDraft({ ...draft, reply: e.target.value })} className="!min-h-28" />
           <Button onClick={sendDraft} disabled={!lead.phone_intl}><MessageCircle size={16} /> Send on WhatsApp</Button>
+          <WaModePicker mode={waMode} setMode={setWaMode} />
         </div>
       )}
     </Card>

@@ -98,3 +98,11 @@ describe('reply safety check', () => {
     expect(checkReply('Sure! Please send your photos.', [5500]).ok).toBe(true);
   });
 });
+
+describe('WhatsApp links', () => {
+  it('opens the right place on phone, desktop app and WhatsApp Web', () => {
+    expect(whatsappLink('+91 98871 81819', 'Hi there', 'app')).toBe('whatsapp://send?phone=919887181819&text=Hi%20there');
+    expect(whatsappLink('+91 98871 81819', 'Hi', 'web')).toBe('https://web.whatsapp.com/send?phone=919887181819&text=Hi');
+    expect(whatsappLink('+91 98871 81819', 'Hi')).toBe('https://wa.me/919887181819?text=Hi');
+  });
+});
