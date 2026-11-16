@@ -102,3 +102,41 @@ describe('learning from mistakes', () => {
     expect(lessonsFromFeedback('wrong_details', { name: 'X', place_id: 'p', phone_key: '1234567890' }).map((r) => r.kind)).toEqual(['skip_place']);
   });
 });
+
+describe('scraper-style exports (real layout from Maps-Scraper.net)', () => {
+  const header = 'Name,Fulladdress,Street,Municipality,Categories,Phone,Phones,Claimed,Review Count,Average Rating,Review URL,Google Maps URL,Latitude,Longitude,Website,Domain,Opening hours,Featured image,Cid,Place Id,Kgmid,Plus code,Google Knowledge URL,Email,Social Medias,Facebook,Instagram,Twitter,Yelp';
+  const locked = Array(9).fill('*** Visible after upgrade ***').join(',');
+  const csv = [header,
+    `Unisex Salon By Nidhi,"34-A Raghu Vihar, Jaipur",34-A,Patrkar Road,"Beauty Parlour,Hairdresser",098871 81819,"098871 81819, +91 98871 81819",YES,1404,4.8,https://search.google.com/local/reviews?placeid=X,https://www.google.com/maps?cid=1,26.8,75.7,,,"Mon",https://img,1,X,${locked}`,
+    `Be U Natural,"Mall of Jaipur",3rd floor,301,Beauty Parlour,,,YES,281,4.6,https://search.google.com/x,https://www.google.com/maps?cid=2,26.9,75.7,https://www.beunatural.in/,beunatural.in,"Mon",https://img,2,Y,${locked}`,
+  ].join('\n');
+
+  it('uses the real Website column, not the Review URL, and ignores ids/images', () => {
+    const t = parseCsv(csv);
+    const m = detectColumns(t[0]);
+    expect(t[0][m.website!]).toBe('Website');
+    expect(t[0][m.maps!]).toBe('Google Maps URL');
+    expect(t[0][m.rating!]).toBe('Average Rating');
+    expect(t[0][m.reviews!]).toBe('Review Count');
+    expect(t[0][m.address!]).toBe('Fulladdress');
+  });
+  it('treats "*** Visible after upgrade ***" as empty, so a row with no real contact is skipped', () => {
+    const t = parseCsv(csv);
+    const { rows, skipped } = readRows(t, detectColumns(t[0]));
+    expect(rows.map((r) => r.name)).toEqual(['Unisex Salon By Nidhi']);
+    expect(rows[0].email).toBeNull();
+    expect(rows[0].instagram).toBeNull();
+    expect(skipped[0].reason).toMatch(/Be U Natural: no phone/);
+  });
+  it('turns it into a clean Hot lead with an international phone and a simple type', () => {
+    const t = parseCsv(csv);
+    const cols = detectColumns(t[0]);
+    const l = importRowToLead(readRows(t, cols).rows[0], d, cols.website !== undefined, null);
+    expect(l.lead_type).toBe('hot');
+    expect(l.phone_intl).toBe('+91 98871 81819');
+    expect(l.business_type).toBe('beauty parlour');
+    expect(l.rating).toBe(4.8);
+    expect(l.review_count).toBe(1404);
+    expect(l.maps_url).toBe('https://www.google.com/maps?cid=1');
+  });
+});

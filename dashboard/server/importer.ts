@@ -55,11 +55,34 @@ const HEADER_RULES: [Field, RegExp][] = [
   ['name', /name|business|shop|company|store|title/],
 ];
 
+// A column titled exactly like a field always wins (e.g. "Website" beats "Review URL").
+const EXACT: Partial<Record<Field, string[]>> = {
+  name: ['name', 'business name', 'business', 'shop name', 'company', 'title'],
+  website: ['website', 'web site', 'website url', 'site', 'homepage', 'url'],
+  phone: ['phone', 'phone number', 'mobile', 'contact', 'contact number'],
+  address: ['address', 'full address', 'fulladdress', 'location'],
+  rating: ['rating', 'average rating', 'stars'],
+  reviews: ['reviews', 'review count', 'reviews count', 'total reviews'],
+  maps: ['google maps url', 'google maps link', 'maps link', 'map link', 'maps url'],
+  email: ['email', 'e mail', 'email address'],
+  instagram: ['instagram'],
+  city: ['city', 'municipality'],
+  type: ['category', 'categories', 'type', 'business type'],
+};
+// Columns that only LOOK like a field: review links, images, ids, social pages.
+const NOT_A_FIELD = /review url|reviews? link|image|photo|thumbnail|\bcid\b|place id|kgmid|plus code|knowledge|latitude|longitude|claimed|facebook|twitter|yelp|social/;
+
 export function detectColumns(header: string[]): Partial<Record<Field, number>> {
   const map: Partial<Record<Field, number>> = {};
-  header.forEach((h, i) => {
-    const key = h.toLowerCase().replace(/[_\-.]+/g, ' ').trim();
-    if (!key) return;
+  const keys = header.map((h) => h.toLowerCase().replace(/[_\-.]+/g, ' ').replace(/\s+/g, ' ').trim());
+  // Pass 1: exact titles.
+  keys.forEach((key, i) => {
+    const hit = (Object.keys(EXACT) as Field[]).find((f) => map[f] === undefined && EXACT[f]!.includes(key));
+    if (hit) map[hit] = i;
+  });
+  // Pass 2: looser patterns for anything still missing.
+  keys.forEach((key, i) => {
+    if (!key || Object.values(map).includes(i) || NOT_A_FIELD.test(key)) return;
     const rule = HEADER_RULES.find(([f, re]) => re.test(key) && map[f] === undefined);
     if (rule) map[rule[0]] = i;
   });
@@ -72,7 +95,9 @@ export interface ImportRow {
   email: string | null; website: string | null; instagram: string | null; rating: number | null; reviews: number | null; maps: string | null; notes: string | null;
 }
 
-const clean = (v: string | undefined) => (v && v.trim() && !/^(n\/?a|none|null|-|—|no)$/i.test(v.trim()) ? v.trim().slice(0, 500) : null);
+// Empty-looking cells, including the locked placeholders some export tools write (e.g. \"*** Visible after upgrade ***\").
+const EMPTY = /^(n\/?a|none|null|-|—|no|nil|undefined)$|visible after upgrade|upgrade to (see|view|unlock)|^\*+[^*]*\*+$/i;
+const clean = (v: string | undefined) => (v && v.trim() && !EMPTY.test(v.trim()) ? v.trim().slice(0, 500) : null);
 
 export function phoneKey(phone: string | null): string | null {
   const d = (phone ?? '').replace(/\D/g, '');
@@ -120,6 +145,20 @@ export function readRows(table: string[][], map: Partial<Record<Field, number>>)
   return { rows, skipped };
 }
 
+/** "099280 87404" in India → "+91 99280 87404". Only fills in what is certain; other countries need a + in the sheet. */
+export function toInternational(phone: string | null, countryCode: string): string | null {
+  if (!phone) return null;
+  const p = phone.trim();
+  if (p.startsWith('+')) return p;
+  const digits = p.replace(/\D/g, '');
+  if (countryCode === 'IN') {
+    const local = digits.replace(/^(0091|91(?=\d{10}$)|0)/, '');
+    if (/^[6-9]\d{9}$/.test(local)) return `+91 ${local.slice(0, 5)} ${local.slice(5)}`;
+    if (/^[1-5]\d{7,9}$/.test(local)) return `+91 ${local}`;
+  }
+  return null;
+}
+
 /** djb2 hash → stable id for a business without a Google place id. */
 function hash(s: string): string {
   let h = 5381;
@@ -141,13 +180,13 @@ export function importRowToLead(r: ImportRow, d: ImportDefaults, hasWebsiteColum
     search_id: searchId,
     place_id: `import:${phoneKey(phone) ?? hash(`${branchKey(r.name)}|${(r.address ?? '').toLowerCase()}`)}`,
     name: r.name,
-    business_type: (r.type ?? d.businessType).toLowerCase().slice(0, 80),
+    business_type: (r.type?.split(',')[0].trim() || d.businessType).toLowerCase().slice(0, 80),
     full_address: r.address,
     city: r.city ?? d.city,
     country: r.country ?? d.country,
     country_code: d.countryCode,
     phone,
-    phone_intl: phone && phone.trim().startsWith('+') ? phone.trim() : null,
+    phone_intl: toInternational(phone, d.countryCode),
     whatsapp: r.whatsapp,
     email: r.email && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(r.email) ? r.email : null,
     instagram: ig ?? site.instagram,

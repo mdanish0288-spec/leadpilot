@@ -9,11 +9,11 @@ const SOCIAL_OR_LISTING = [
   'facebook.com', 'fb.com', 'instagram.com', 'linktr.ee', 'linktree.com', 'wa.me', 'whatsapp.com', 'tiktok.com', 'x.com', 'twitter.com',
   'youtube.com', 'yelp.com', 'tripadvisor.', 'zomato.com', 'swiggy.com', 'ubereats.com', 'doordash.com', 'skipthedishes.com', 'grubhub.com',
   'deliveroo.', 'just-eat.', 'justeat.', 'booksy.com', 'fresha.com', 'vagaro.com', 'justdial.com', 'sulekha.com', 'g.page', 'maps.app.goo.gl',
-  'business.site', 'linkedin.com', 'pinterest.com', 'magicpin.in', 'dineout.co.in', 'eazydiner.com', 'opentable.', 'thefork.',
+  'business.site', 'linkedin.com', 'pinterest.com', 'magicpin.in', 'dineout.co.in', 'bewtee.com', 'nearbuy.com', 'urbancompany.com', 'jsdl.in', 'eazydiner.com', 'opentable.', 'thefork.',
 ];
 
 // Cheap/free builder subdomains usually mean a basic or outdated site.
-const FREE_BUILDER_HOSTS = ['wixsite.com', 'weebly.com', 'godaddysites.com', 'blogspot.com', 'wordpress.com', 'jimdosite.com', 'webnode.', 'site123.me', 'yolasite.com', 'strikingly.com', 'business.site', 'mystrikingly.com', 'carrd.co', 'sites.google.com'];
+const FREE_BUILDER_HOSTS = ['wixsite.com', 'weebly.com', 'godaddysites.com', 'blogspot.com', 'wordpress.com', 'jimdosite.com', 'webnode.', 'site123.me', 'yolasite.com', 'strikingly.com', 'business.site', 'mystrikingly.com', 'carrd.co', 'sites.google.com', 'grexa.site', 'dotpe.in', 'mydukaan.io', 'ueniweb.com', 'site123.me'];
 
 export function hostOf(url: string): string | null {
   try {
