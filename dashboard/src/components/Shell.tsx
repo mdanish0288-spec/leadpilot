@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router';
-import { Bell, CalendarDays, Home, LogOut, Server, Settings, Users } from 'lucide-react';
+import { Bell, CalendarDays, Home, LogOut, Server, Settings, Trash2, Users } from 'lucide-react';
 import { signOut } from '../auth';
 import { cx } from './ui';
 
@@ -10,6 +10,7 @@ const NAV = [
   { to: '/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/settings', label: 'Settings', icon: Settings },
   { to: '/hosting', label: 'Hosting', icon: Server },
+  { to: '/deleted', label: 'Deleted', icon: Trash2 },
 ];
 
 export function Shell() {
@@ -45,7 +46,7 @@ export function Shell() {
       </main>
 
       {/* Phone bottom nav (thumb reach) */}
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-7 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
         {NAV.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === '/'}
             className={({ isActive }) => cx('flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium', isActive ? 'text-accent' : 'text-muted')}>

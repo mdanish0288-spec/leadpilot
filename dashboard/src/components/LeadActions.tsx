@@ -42,7 +42,7 @@ export function DemoCard({ lead, onChange }: { lead: Lead; onChange: (l: Lead) =
   }
   const colourPicker = (
     <div className="mb-4 rounded-xl border border-line p-3">
-      <p className="mb-2 text-sm font-medium">Salon's colours</p>
+      <p className="mb-2 text-sm font-medium">Business colours</p>
       <p className="mb-3 text-xs text-muted">Open their Google Maps photos once and match the sign, walls or furniture.</p>
       <div className="flex flex-wrap gap-3">
         {['Dark', 'Main colour', 'Light'].map((label, i) => (

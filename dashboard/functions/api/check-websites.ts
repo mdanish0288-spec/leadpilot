@@ -33,7 +33,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const db = new Db(bearer(request));
     await requireOwner(db, 'website_check', 600);
-    const pending = await db.select<PendingLead>(`leads?website_status=eq.pending&order=created_at.asc&limit=${BATCH}&select=*`);
+    const pending = await db.select<PendingLead>(`leads?website_status=eq.pending&deleted_at=is.null&order=created_at.asc&limit=${BATCH}&select=*`);
     if (!pending.length) return json({ checked: 0, remaining: false, sheet: { ok: true, rows: 0 } });
 
     const results = await Promise.all(pending.map((l) => checkOne(l.website)));
@@ -44,7 +44,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       ...l, lead_type: checks[i].lead_type, email: l.email ?? checks[i].email, instagram: l.instagram ?? checks[i].instagram,
     }));
     const sheet = await rewriteInSheet(db, env, updated);
-    const more = await db.select<{ id: string }>('leads?website_status=eq.pending&select=id&limit=1');
+    const more = await db.select<{ id: string }>('leads?website_status=eq.pending&deleted_at=is.null&select=id&limit=1');
     return json({ checked: pending.length, remaining: more.length > 0, results: checks.map((c) => ({ id: c.id, lead_type: c.lead_type })), sheet });
   } catch (e) {
     return errorResponse(e);

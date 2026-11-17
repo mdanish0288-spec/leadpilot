@@ -84,14 +84,14 @@ export interface Lead {
   pricing_tier: 'standard' | 'premium' | 'luxury' | null; stage: string; photo_count: number;
   top_reviews: { rating: number | null; text: string; author: string | null; when: string | null }[];
   sheet_row: number | null; notes: string | null; data_source: 'google' | 'openstreetmap' | 'import'; needs_verification: boolean; place_id?: string; phone_key?: string | null;
-  services?: string[]; store_colors?: string | null; photo_refs?: { url?: string; name?: string }[]; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null;
+  services?: string[]; store_colors?: string | null; photo_refs?: { url?: string; name?: string }[]; demo_slug?: string | null; demo_link?: string | null; demo_theme?: string | null; contacted_by?: string | null; deleted_at?: string | null;
 }
 
-const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,store_colors,photo_refs,demo_slug,demo_link,demo_theme,contacted_by';
+const LEAD_COLUMNS = 'id,created_at,name,business_type,full_address,neighbourhood,city,country,country_code,phone,phone_intl,email,instagram,rating,review_count,price_level,opening_hours,maps_url,website,website_status,website_issues,lead_type,score,score_reasons,pricing_tier,stage,photo_count,top_reviews,sheet_row,notes,data_source,needs_verification,place_id,phone_key,services,store_colors,photo_refs,demo_slug,demo_link,demo_theme,contacted_by,deleted_at';
 
 export async function loadLeads(): Promise<Lead[]> {
-  if (PREVIEW) return PREVIEW_LEADS;
-  const { data, error } = await supabase.from('leads').select(LEAD_COLUMNS).order('created_at', { ascending: false }).limit(500);
+  if (PREVIEW) return PREVIEW_LEADS.filter((l) => !l.deleted_at);
+  const { data, error } = await supabase.from('leads').select(LEAD_COLUMNS).is('deleted_at', null).order('created_at', { ascending: false }).limit(500);
   if (error) throw new Error(`Could not load leads: ${error.message}`);
   return (data ?? []) as unknown as Lead[];
 }
@@ -103,10 +103,33 @@ export async function loadLead(id: string): Promise<Lead | null> {
   return data as unknown as Lead | null;
 }
 
+// ---- Recently deleted (bin): hidden everywhere, restorable for 30 days, then deleted forever by a daily job ----
+export const BIN_DAYS = 30;
+export const daysLeft = (deletedAt: string) => Math.max(0, BIN_DAYS - Math.floor((Date.now() - new Date(deletedAt).getTime()) / 86_400_000));
+
+export async function loadDeletedLeads(): Promise<Lead[]> {
+  if (PREVIEW) return PREVIEW_LEADS.filter((l) => l.deleted_at);
+  const { data, error } = await supabase.from('leads').select(LEAD_COLUMNS).not('deleted_at', 'is', null).order('deleted_at', { ascending: false });
+  if (error) throw new Error(`Could not load deleted leads: ${error.message}`);
+  return (data ?? []) as unknown as Lead[];
+}
+async function setDeleted(id: string, at: string | null): Promise<void> {
+  if (PREVIEW) { const l = PREVIEW_LEADS.find((x) => x.id === id); if (l) l.deleted_at = at; return; }
+  const { error } = await supabase.from('leads').update({ deleted_at: at }).eq('id', id);
+  if (error) throw new Error(error.message.includes('paid') ? 'A client who has paid cannot be deleted.' : `Could not update: ${error.message}`);
+}
+export const moveLeadToBin = (id: string) => setDeleted(id, new Date().toISOString());
+export const restoreLead = (id: string) => setDeleted(id, null);
+export async function deleteLeadForever(id: string): Promise<void> {
+  if (PREVIEW) { const i = PREVIEW_LEADS.findIndex((x) => x.id === id); if (i >= 0) PREVIEW_LEADS.splice(i, 1); return; }
+  const { error } = await supabase.from('leads').delete().eq('id', id).not('deleted_at', 'is', null);
+  if (error) throw new Error(`Could not delete: ${error.message}`);
+}
+
 export async function homeStats(): Promise<{ leads: number; hot: number; warm: number; pending: number }> {
   if (PREVIEW) return { leads: 17, hot: 9, warm: 5, pending: 0 };
   const count = async (filter?: [string, string]) => {
-    let q = supabase.from('leads').select('id', { count: 'exact', head: true });
+    let q = supabase.from('leads').select('id', { count: 'exact', head: true }).is('deleted_at', null);
     if (filter) q = q.eq(filter[0], filter[1]);
     const { count: n } = await q;
     return n ?? 0;
@@ -197,7 +220,7 @@ export async function leadsCsv(): Promise<string> {
   let rows: SheetLead[];
   if (PREVIEW) rows = PREVIEW_LEADS as unknown as SheetLead[];
   else {
-    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('leads').select('*').is('deleted_at', null).order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     rows = data as SheetLead[];
   }

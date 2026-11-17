@@ -42,8 +42,8 @@ function fakeServices(opts: { quota?: string; sheetLinked?: boolean; googleDown?
       return ok(fresh);
     }
     if (url.includes('phone_key=in.')) return ok([{ phone_key: '9839022222' }]);
-    if (url.includes('/rest/v1/leads?website_status=eq.pending&order')) return ok(leads.filter((l) => l.website_status === 'pending').map((l) => ({ ...l, sheet_row: 3 })));
-    if (url.includes('/rest/v1/leads?website_status=eq.pending&select=id')) return ok([]);
+    if (url.includes('/rest/v1/leads?website_status=eq.pending&deleted_at=is.null&order')) return ok(leads.filter((l) => l.website_status === 'pending').map((l) => ({ ...l, sheet_row: 3 })));
+    if (url.includes('/rest/v1/leads?website_status=eq.pending&deleted_at=is.null&select=id')) return ok([]);
     if (url.includes('/rest/v1/settings')) return ok([{ google_sheet_id: opts.sheetLinked === false ? '' : '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789' }]);
     if (url.includes('places.googleapis.com')) return opts.googleDown ? new Response('{"error":{"status":"PERMISSION_DENIED"}}', { status: 403 }) : ok({ places });
     if (url.includes('nominatim.openstreetmap.org')) return ok([{ boundingbox: ['28.4', '28.9', '76.8', '77.3'] }]);

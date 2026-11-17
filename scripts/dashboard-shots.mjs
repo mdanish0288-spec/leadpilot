@@ -4,7 +4,7 @@ import { chromium } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
 const [base, out] = process.argv.slice(2);
 mkdirSync(out, { recursive: true });
-const pages = [['login', '/?preview&screen=login'], ['enroll', '/?preview&screen=enroll'], ['home', '/?preview'], ['leads', '/leads?preview'], ['alerts', '/alerts?preview'], ['calendar', '/calendar?preview'], ['settings', '/settings?preview'], ['hosting', '/hosting?preview'], ['lead-detail', '/leads/p2?preview'], ['import', '/leads/import?preview']];
+const pages = [['login', '/?preview&screen=login'], ['enroll', '/?preview&screen=enroll'], ['home', '/?preview'], ['leads', '/leads?preview'], ['alerts', '/alerts?preview'], ['calendar', '/calendar?preview'], ['settings', '/settings?preview'], ['hosting', '/hosting?preview'], ['lead-detail', '/leads/p2?preview'], ['import', '/leads/import?preview'], ['deleted', '/deleted?preview']];
 const vps = { phone: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 }, desktop: { width: 1440, height: 900, deviceScaleFactor: 1 } };
 const b = await chromium.launch(); let fails = 0;
 for (const [name, path] of pages) for (const [vn, vp] of Object.entries(vps)) {

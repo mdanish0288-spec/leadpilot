@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
-import { AlertTriangle, ArrowLeft, Camera, Download, ExternalLink, Flame, Globe, Mail, MapPin, Phone, Star, Sun, Upload, Users } from 'lucide-react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { AlertTriangle, ArrowLeft, Camera, Download, ExternalLink, Flame, Globe, Mail, MapPin, Phone, RotateCcw, Star, Sun, Trash2, Upload, Users } from 'lucide-react';
 import { Button, Card, EmptyState, Notice, PageHeader, Textarea, cx } from '../components/ui';
-import { leadsCsv, loadLead, loadLeads, publishDemo, reportMistake, type Lead } from '../lib/data';
+import { daysLeft, leadsCsv, loadLead, loadLeads, moveLeadToBin, restoreLead, publishDemo, reportMistake, type Lead } from '../lib/data';
 import { ConversationCard, DemoCard, SendCard } from '../components/LeadActions';
 import { rankLeads } from '../../server/importer';
 import { REASON_TEXT, type FeedbackReason } from '../../server/lessons';
@@ -136,7 +136,19 @@ export function LeadDetailPage() {
   const { id } = useParams();
   const [lead, setLead] = useState<Lead | null | undefined>(undefined);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
   useEffect(() => { if (id) loadLead(id).then(setLead).catch((e) => setError(e.message)); }, [id]);
+  async function remove() {
+    if (!lead || !window.confirm(`Delete “${lead.name}”?
+
+It moves to Recently deleted. You can restore it for 30 days, then it is deleted forever.`)) return;
+    try { await moveLeadToBin(lead.id); navigate('/leads'); } catch (e) { setError((e as Error).message); }
+  }
+  async function restore() {
+    if (!lead) return;
+    try { await restoreLead(lead.id); setLead({ ...lead, deleted_at: null }); } catch (e) { setError((e as Error).message); }
+  }
+  const paid = lead?.stage === 'Advance Paid' || lead?.stage === 'Fully Paid';
 
   if (error) return <Notice tone="danger">{error}</Notice>;
   if (lead === undefined) return <p className="text-muted">Loading…</p>;
@@ -146,7 +158,14 @@ export function LeadDetailPage() {
     <>
       <Link to="/leads" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"><ArrowLeft size={16} /> All leads</Link>
       <PageHeader title={lead.name} subtitle={`${lead.business_type} · ${[lead.city, lead.country].filter(Boolean).join(', ')}`}
-        action={<div className="flex gap-2"><TypeBadge t={lead.lead_type} /><span className="inline-flex h-6 items-center rounded-full border border-line bg-white px-2.5 text-xs font-medium">{lead.stage}</span></div>} />
+        action={<div className="flex gap-2"><TypeBadge t={lead.lead_type} /><span className="inline-flex h-6 items-center rounded-full border border-line bg-white px-2.5 text-xs font-medium">{lead.stage}</span>
+          {!lead.deleted_at && !paid && <button onClick={remove} aria-label="Delete this lead" title="Delete" className="inline-flex h-6 items-center gap-1 rounded-full border border-line bg-white px-2.5 text-xs font-medium text-muted hover:border-danger hover:text-danger"><Trash2 size={13} /> Delete</button>}</div>} />
+      {lead.deleted_at && (
+        <div className="mb-5"><Notice tone="warn">
+          <div className="flex flex-wrap items-center justify-between gap-3"><span><b>This lead is deleted.</b> It will be deleted forever in {daysLeft(lead.deleted_at)} days.</span>
+          <Button variant="secondary" onClick={restore}><RotateCcw size={16} /> Restore</Button></div>
+        </Notice></div>
+      )}
 
       {lead.needs_verification && (
         <div className="mb-5"><Notice tone="warn">

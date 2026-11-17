@@ -10,6 +10,7 @@ import { LeadDetailPage, LeadsPage } from './pages/Leads';
 import { ImportPage } from './pages/Import';
 import { SettingsPage } from './pages/Settings';
 import { HostingPage } from './pages/Hosting';
+import { DeletedPage } from './pages/Deleted';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="hosting" element={<HostingPage />} />
+            <Route path="deleted" element={<DeletedPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
